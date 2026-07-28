@@ -678,18 +678,18 @@
                     let dynamicQuestions = [];
                     let qNum = 1;
 
-                    if (moduleName === 'Ujian 1' || moduleName === 'Ujian 2') {
-                        let generatedCount = 0; 
+                    if (moduleName === 'Ujian 1') {
+                        let generatedCount = 0;
                         questionFiles.forEach((fileObj) => {
                             if (generatedCount >= 30) return; // Batasi 30 Soal
 
                             // Pembacaan soal sisi kiri gambar (Ganjil)
                             let q1Id = qNum++;
-                            generatedCount++; 
-                            let defaultKey1 = (moduleName === 'Ujian 1') ? 'A' : ['A', 'B', 'C'][(q1Id - 1) % 3];
-                            let config1 = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][q1Id]) 
-                                ? EXAM_CONFIG[moduleName][q1Id] 
-                                : { key: defaultKey1, optionsCount: (moduleName === 'Ujian 1' ? 4 : 3), exp: `Soal ${q1Id}: Berdasarkan analisis logika.` };
+                            generatedCount++;
+                            let defaultKey1 = 'A';
+                            let config1 = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][q1Id])
+                                ? EXAM_CONFIG[moduleName][q1Id]
+                                : { key: defaultKey1, optionsCount: 4, exp: `Soal ${q1Id}: Berdasarkan analisis logika.` };
                             dynamicQuestions.push({ id: q1Id, driveId: fileObj.id, cropType: 'left', optionsCount: config1.optionsCount || 4, key: config1.key || defaultKey1, explanation: config1.exp });
 
                             if (generatedCount >= 30) return;
@@ -697,11 +697,30 @@
                             // Pembacaan soal sisi kanan gambar (Genap)
                             let q2Id = qNum++;
                             generatedCount++;
-                            let defaultKey2 = (moduleName === 'Ujian 1') ? 'B' : ['A', 'B', 'C'][(q2Id - 1) % 3];
-                            let config2 = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][q2Id]) 
-                                ? EXAM_CONFIG[moduleName][q2Id] 
-                                : { key: defaultKey2, optionsCount: (moduleName === 'Ujian 1' ? 4 : 3), exp: `Soal ${q2Id}: Berdasarkan analisis logika.` };
+                            let defaultKey2 = 'B';
+                            let config2 = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][q2Id])
+                                ? EXAM_CONFIG[moduleName][q2Id]
+                                : { key: defaultKey2, optionsCount: 4, exp: `Soal ${q2Id}: Berdasarkan analisis logika.` };
                             dynamicQuestions.push({ id: q2Id, driveId: fileObj.id, cropType: 'right', optionsCount: config2.optionsCount || 4, key: config2.key || defaultKey2, explanation: config2.exp });
+                        });
+                    } else if (moduleName === 'Ujian 2') {
+                        // Kecermatan Gambar: setiap gambar halaman berisi 4 soal tersusun
+                        // dari atas ke bawah, masing-masing soal memuat gambar (kiri) dan
+                        // teks soal (kanan) dalam satu baris utuh -> di-crop per baris (row-1..row-4),
+                        // BUKAN dipotong kiri/kanan, supaya gambar dan teks soal tetap satu kesatuan.
+                        let generatedCount = 0;
+                        questionFiles.forEach((fileObj) => {
+                            if (generatedCount >= 60) return; // Batasi 60 Soal (15 gambar x 4 baris)
+                            for (let r = 1; r <= 4; r++) {
+                                if (generatedCount >= 60) return;
+                                let qId = qNum++;
+                                generatedCount++;
+                                let defaultKey = ['A', 'B', 'C'][(qId - 1) % 3];
+                                let config = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][qId])
+                                    ? EXAM_CONFIG[moduleName][qId]
+                                    : { key: defaultKey, optionsCount: 3, exp: `Soal ${qId}: Berdasarkan analisis logika.` };
+                                dynamicQuestions.push({ id: qId, driveId: fileObj.id, cropType: `row-${r}`, optionsCount: config.optionsCount || 3, key: config.key || defaultKey, explanation: config.exp });
+                            }
                         });
                     } else if (moduleName === 'Ujian 3') {
                         let generatedCount = 0;
@@ -1102,8 +1121,8 @@
             } else {
                 img.style.transform = 'none';
                 img.style.width = '';
-                img.className = 'w-full h-auto object-contain transition-all duration-300';
-                wrapper.style.height = '450px';
+                img.className = 'max-w-full w-auto h-auto max-h-[65vh] object-contain mx-auto block transition-all duration-300';
+                wrapper.style.height = 'auto';
             }
         }
 
@@ -1112,7 +1131,8 @@
             container.innerHTML = '';
 
             let modes = [];
-            if (selectedModule === 'Ujian 1' || selectedModule === 'Ujian 2') modes = ['left', 'right', 'full'];
+            if (selectedModule === 'Ujian 1') modes = ['left', 'right', 'full'];
+            else if (selectedModule === 'Ujian 2') modes = ['full'];
             else if (selectedModule === 'Ujian 3' || selectedModule === 'Ujian 4') modes = [activeCropType, 'full'];
             else modes = ['full'];
 
@@ -1165,7 +1185,7 @@
             const hint = document.createElement('p');
             hint.className = 'text-[10px] text-slate-400 text-center mb-1.5 w-full font-medium';
             
-            if (selectedModule === 'Ujian 2' && (activeCropType === 'left' || activeCropType === 'right')) {
+            if (activeCropType === 'full') {
                 hint.innerHTML = '';
             } else if (activeCropType.startsWith('grid-') || activeCropType.startsWith('tmg-')) {
                 hint.innerHTML = '<i class="fa-solid fa-up-down-left-right mr-1 text-indigo-500"></i> Anda dapat menggeser (scroll) gambar jika posisinya kurang pas';
@@ -1192,7 +1212,7 @@
                 } else if (activeCropType.startsWith('tmg-')) {
                     img.className = 'w-[210%] max-w-none h-auto block relative';
                 } else {
-                    img.className = 'w-full h-auto object-contain relative';
+                    img.className = 'max-w-full w-auto h-auto max-h-[65vh] object-contain mx-auto block relative';
                 }
 
                 img.onload = () => {
@@ -1241,7 +1261,7 @@
                         wrapper.scrollTop = marginY + ((rowNum - 1) * cellH);
                         wrapper.scrollLeft = marginX + ((colNum - 1) * cellW);
                     } else {
-                        wrapper.style.height = '450px';
+                        wrapper.style.height = 'auto';
                     }
                 };
 
@@ -1479,7 +1499,7 @@
                     } else if (q.cropType && q.cropType.startsWith('tmg-')) {
                         img.className = 'w-[210%] max-w-none h-auto block relative';
                     } else {
-                        img.className = 'w-full h-auto object-contain relative';
+                        img.className = 'max-w-full w-auto h-auto max-h-[65vh] object-contain mx-auto block relative';
                     }
                     
                     img.onload = () => {
@@ -1527,7 +1547,7 @@
                             imgWrap.scrollTop = marginY + ((rowNum - 1) * cellH);
                             imgWrap.scrollLeft = marginX + ((colNum - 1) * cellW);
                         } else {
-                            imgWrap.style.height = '250px';
+                            imgWrap.style.height = 'auto';
                         }
                     };
                     imgWrap.appendChild(img);
