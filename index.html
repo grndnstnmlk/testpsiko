@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Ujian Psikotes Online</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .option-btn {
+            touch-action: manipulation;
+            user-select: none;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .option-btn:active {
+            transform: scale(0.96);
+        }
+
+        .option-btn.selected {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35);
+        }
+
+        .num-nav-btn {
+            transition: all 0.15s ease;
+        }
+
+        .num-nav-btn.active {
+            background-color: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+            font-weight: 700;
+        }
+
+        .num-nav-btn.answered:not(.active) {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            border-color: #c7d2fe;
+        }
+
+        .scroll-viewport {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f8fafc;
+        }
+        
+        .scroll-viewport::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .scroll-viewport::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .scroll-viewport::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-15px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .animate-fade-in {
+            animation: modalFadeIn 0.3s ease-out forwards;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #modal-evaluation, #modal-evaluation * { visibility: visible; }
+            #modal-evaluation { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-[90rem] mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg">
+                    <i class="fa-solid fa-brain text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Portal Ujian Psikotes Online</h1>
+                    <p class="text-xs text-slate-400">Sistem Assessment & Simulasi</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button id="btn-toggle-portal" onclick="togglePortal()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span id="portal-btn-text">Akses Pengajar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[90rem] mx-auto w-full p-2 sm:p-4 flex-grow flex flex-col justify-center">
+
+        <!-- VIEW: HOME (STUDENT) -->
+        <section id="view-student-home" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-slate-100 max-w-2xl mx-auto w-full">
+            <div class="text-center mb-6">
+                <span class="bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">Simulasi Psikotes Akademik</span>
+                <h2 class="text-2xl font-bold text-slate-800 mt-2">Pilih Modul Ujian</h2>
+                <p class="text-sm text-slate-500 mt-1">Lengkapi data diri Anda dan pilih modul ujian yang akan dikerjakan.</p>
+            </div>
+
+            <form id="form-register" onsubmit="event.preventDefault();" class="space-y-5 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap *</label>
+                        <input type="text" id="student-name" required placeholder="Contoh: Budi Santoso" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Kategori Pendaftaran *</label>
+                        <select id="student-class" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium bg-white">
+                            <option value="" disabled selected>-- Pilih Kategori --</option>
+                            <option value="PA (Perwira)">PA (Perwira)</option>
+                            <option value="BA (Bintara)">BA (Bintara)</option>
+                            <option value="TA (Tamtama)">TA (Tamtama)</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button onclick="prepareExam('Ujian 1')" class="bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-500 group transition-all rounded-2xl p-5 text-left flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 text-xl font-black mb-3 group-hover:scale-110 transition-transform">1</div>
+                    <h3 class="font-bold text-slate-800">Ujian 1</h3>
+                    <p class="text-xs text-slate-500 mt-1">Penalaran Mekanikal | 12 Menit</p>
+                </button>
+                <button onclick="prepareExam('Ujian 2')" class="bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-500 group transition-all rounded-2xl p-5 text-left flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 text-xl font-black mb-3 group-hover:scale-110 transition-transform">2</div>
+                    <h3 class="font-bold text-slate-800">Ujian 2</h3>
+                    <p class="text-xs text-slate-500 mt-1">Kecermatan Gambar | 12 Menit</p>
+                </button>
+                <button onclick="prepareExam('Ujian 3')" class="bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-500 group transition-all rounded-2xl p-5 text-left flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 text-xl font-black mb-3 group-hover:scale-110 transition-transform">3</div>
+                    <h3 class="font-bold text-slate-800">Ujian 3</h3>
+                    <p class="text-xs text-slate-500 mt-1">Tes Perseptual (O / X) | 12 Menit</p>
+                </button>
+                <button onclick="prepareExam('Ujian 4')" class="bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-500 group transition-all rounded-2xl p-5 text-left flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 text-xl font-black mb-3 group-hover:scale-110 transition-transform">4</div>
+                    <h3 class="font-bold text-slate-800">Ujian 4</h3>
+                    <p class="text-xs text-slate-500 mt-1">Tes Matriks Gambar | 12 Menit</p>
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW: EXAM INTRO -->
+        <section id="view-student-intro" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-slate-100 max-w-4xl mx-auto w-full">
+            <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-indigo-600"></i> Instruksi & Contoh Soal
+                </h2>
+                <span id="intro-exam-name" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">Ujian 1</span>
+            </div>
+
+            <div class="space-y-4 text-sm text-slate-600 mb-6">
+                <p>Sebelum waktu 12 menit dimulai, harap perhatikan contoh dan instruksi ujian di bawah ini dengan saksama.</p>
+                
+                <div id="intro-img-container" class="bg-slate-50 border border-slate-200 p-2 md:p-4 rounded-xl flex justify-center items-start overflow-y-auto max-h-[65vh]">
+                    <i class="fa-solid fa-spinner fa-spin text-indigo-600 text-2xl m-8"></i>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-xs flex items-start gap-3 mt-4">
+                    <i class="fa-solid fa-clock text-amber-600 text-lg mt-0.5"></i>
+                    <div>
+                        <strong>Catatan Pengawasan Ujian:</strong>
+                        <p class="mt-0.5">Waktu pengerjaan adalah <strong>12 menit</strong> per modul. Tampilan waktu disembunyikan untuk menjaga fokus, namun sistem akan otomatis mengumpulkan ujian jika waktu habis.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="startExamFromIntro()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> Saya Paham, Mulai Ujian Sekarang
+                </button>
+                <button onclick="cancelIntro()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-5 rounded-xl transition">
+                    Batal
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW: STUDENT TEST -->
+        <section id="view-student-test" class="hidden bg-white rounded-2xl shadow-xl p-4 md:p-6 border border-slate-100 w-full mx-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div>
+                    <h3 id="test-student-name" class="font-bold text-slate-800 text-sm">Nama Peserta</h3>
+                    <p id="test-student-class" class="text-xs text-slate-400">Kategori</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="test-module-badge" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">Ujian 1</span>
+                    <button onclick="confirmFinishExam()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-1.5 px-3 rounded-lg transition shadow-sm">
+                        Selesai Ujian
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- BAGIAN KIRI: GAMBAR SOAL -->
+                <div class="w-full lg:w-[70%] flex flex-col">
+                    <div class="flex items-center justify-between bg-slate-100 p-2 rounded-xl mb-3 text-xs overflow-x-auto">
+                        <span class="font-bold text-slate-600 px-2 flex items-center gap-1 whitespace-nowrap">
+                            <i class="fa-solid fa-scissors text-indigo-600"></i> Fokus Lensa:
+                        </span>
+                        <div id="crop-toolbar-container" class="flex gap-1">
+                            <!-- Dynamic crop buttons -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-2 md:p-4 flex flex-col justify-center items-center flex-grow relative min-h-[300px]">
+                        <div id="question-render-container" class="w-full flex justify-center items-center flex-col h-full">
+                            <!-- Image renders dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BAGIAN KANAN: PANEL JAWABAN & NAVIGASI -->
+                <div class="w-full lg:w-[30%] flex flex-col justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-inner">
+                    <div>
+                        <div class="mb-6">
+                            <p class="text-xs font-extrabold text-slate-500 mb-3 uppercase tracking-wider text-center">Pilih Jawaban Anda:</p>
+                            <div id="options-container" class="flex flex-wrap justify-center gap-2.5">
+                                <!-- Choice buttons -->
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-extrabold text-slate-500">Grid Navigasi:</span>
+                                <span id="answered-count-badge" class="text-xs bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md font-bold shadow-sm">Terjawab 0/0</span>
+                            </div>
+                            <div id="nav-grid" class="flex flex-wrap gap-1.5 justify-start max-h-[300px] overflow-y-auto p-1 content-start">
+                                <!-- Number buttons -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-200 gap-2">
+                        <button onclick="prevQuestion()" id="btn-prev-q" class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition flex justify-center items-center shadow-sm">
+                            <i class="fa-solid fa-chevron-left mr-1.5"></i> Sebelumnya
+                        </button>
+                        <button onclick="nextQuestion()" id="btn-next-q" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition flex justify-center items-center shadow-md shadow-indigo-200">
+                            Berikutnya <i class="fa-solid fa-chevron-right ml-1.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: FINISHED -->
+        <section id="view-student-finished" class="hidden bg-white rounded-2xl shadow-xl p-8 border border-slate-100 max-w-md mx-auto w-full text-center">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-check font-black"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800">Ujian Selesai!</h2>
+            <p class="text-sm text-slate-500 mt-2">
+                Terima kasih, <span id="finished-student-name" class="font-bold text-slate-800">Siswa</span>. Jawaban Anda telah diproses oleh sistem.
+            </p>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 my-6 text-xs text-slate-600 text-center">
+                <i id="finished-cloud-icon" class="fa-solid fa-cloud-arrow-up text-indigo-600 text-lg mb-1.5 block"></i>
+                <p id="finished-cloud-msg" class="text-slate-600 font-medium">Hasil pengerjaan Anda otomatis disinkronkan ke penguji.</p>
+            </div>
+
+            <button onclick="resetToHome()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3 px-4 rounded-xl text-sm transition">
+                Kembali ke Halaman Depan
+            </button>
+        </section>
+
+        <!-- VIEW: TEACHER DASHBOARD -->
+        <section id="view-teacher-dashboard" class="hidden w-full space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">Total Peserta Ujian</p>
+                        <h4 id="stat-total-students" class="text-2xl font-black text-slate-800 mt-1">0</h4>
+                    </div>
+                    <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">Rata-Rata Nilai</p>
+                        <h4 id="stat-avg-score" class="text-2xl font-black text-slate-800 mt-1">0</h4>
+                    </div>
+                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">Nilai Tertinggi</p>
+                        <h4 id="stat-highest-score" class="text-2xl font-black text-slate-800 mt-1">0</h4>
+                    </div>
+                    <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                            Hasil Ujian Peserta 
+                            <span id="cloud-sync-status" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-cloud-check mr-1"></i> Live</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Data pengerjaan tersinkronisasi ke Firestore Database</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportToCSV()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-1.5 px-3 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                        <button onclick="clearAllData()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-1.5 px-3 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash-can"></i> Hapus Semua
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <th class="py-3 px-4 font-semibold">Tanggal</th>
+                                <th class="py-3 px-4 font-semibold">Nama Peserta</th>
+                                <th class="py-3 px-4 font-semibold">Kategori</th>
+                                <th class="py-3 px-4 font-semibold">Modul</th>
+                                <th class="py-3 px-4 font-semibold text-center">Dijawab</th>
+                                <th class="py-3 px-4 font-semibold text-center">Benar</th>
+                                <th class="py-3 px-4 font-semibold text-center">Nilai</th>
+                                <th class="py-3 px-4 font-semibold text-center">Evaluasi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-results-body" class="divide-y divide-slate-100 text-sm">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODALS -->
+    <div id="modal-alert" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-fade-in">
+            <div id="alert-icon" class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="alert-title" class="font-bold text-slate-800 text-base">Pemberitahuan</h3>
+            <p id="alert-msg" class="text-xs text-slate-500 mt-2 mb-5">Pesan informasi.</p>
+            
+            <div id="alert-actions" class="flex gap-2 justify-center">
+                <button onclick="closeAlertModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 rounded-xl text-xs">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-fade-in">
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 id="confirm-title" class="font-bold text-slate-800 text-base">Konfirmasi</h3>
+            <p id="confirm-msg" class="text-xs text-slate-500 mt-2 mb-5">Apakah Anda yakin ingin melanjutkan?</p>
+            
+            <div class="flex gap-2 justify-center">
+                <button id="btn-confirm-yes" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-xs shadow-sm">Ya, Kumpulkan</button>
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xs w-full p-6 text-center animate-fade-in">
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-lock text-xl"></i>
+            </div>
+            <h3 class="font-bold text-slate-800">Akses Pengajar</h3>
+            <p class="text-xs text-slate-400 mt-1 mb-4">Masukkan PIN Penguji untuk melihat dashboard.</p>
+            
+            <input type="password" id="input-pin" maxlength="6" placeholder="Masukkan PIN" class="w-full text-center text-lg font-bold px-4 py-2 border border-slate-200 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            
+            <div class="flex gap-2">
+                <button onclick="verifyTeacherPin()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs">Masuk</button>
+                <button onclick="closePinModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Detail Modal -->
+    <div id="modal-evaluation" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-fade-in">
+            <div class="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between flex-shrink-0">
+                <div>
+                    <h3 class="font-bold text-base sm:text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check text-indigo-400"></i> Evaluasi & Pembahasan Hasil Ujian
+                    </h3>
+                    <p id="eval-student-info" class="text-xs text-slate-300 mt-0.5">Nama Peserta | Modul</p>
+                </div>
+                <button onclick="closeEvaluationModal()" class="text-slate-400 hover:text-white p-2 rounded-lg text-lg transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="eval-content-body" class="p-4 sm:p-6 overflow-y-auto space-y-6 flex-grow bg-slate-50">
+                <!-- Evaluation content injected here -->
+            </div>
+
+            <div class="bg-white border-t border-slate-200 p-4 flex justify-between items-center flex-shrink-0 no-print">
+                <div id="eval-score-badge" class="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700">
+                    Nilai: 0
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-xl text-xs transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> Cetak
+                    </button>
+                    <button onclick="closeEvaluationModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 px-4 rounded-xl text-xs transition">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-slate-100 py-3 text-center text-xs text-slate-400 no-print">
+        Portal Ujian Psikotes Online &copy; Sistem Assessment & Simulasi
+    </footer>
+
+    <!-- LOGIKA DATA DAN APLIKASI UTAMA (Non-Firebase) -->
+    <script>
+        // Wrapper aman untuk localStorage.
+        // Di Safari iOS, localStorage bisa melempar SecurityError/QuotaExceededError
+        // (misalnya saat file dibuka langsung sebagai file:// dari app Files/AirDrop,
+        // atau saat Private Browsing aktif). Tanpa wrapper ini, error tersebut akan
+        // menghentikan seluruh script sehingga tombol/menu jadi tidak berfungsi.
+        const safeStorage = (function() {
+            let memoryStore = {};
+            let available = false;
+            try {
+                const testKey = '__storage_test__';
+                localStorage.setItem(testKey, '1');
+                localStorage.removeItem(testKey);
+                available = true;
+            } catch (e) {
+                console.warn('localStorage tidak tersedia, menggunakan penyimpanan sementara di memori.', e);
+            }
+            return {
+                getItem(key) {
+                    if (available) {
+                        try { return localStorage.getItem(key); } catch (e) { /* fallthrough */ }
+                    }
+                    return Object.prototype.hasOwnProperty.call(memoryStore, key) ? memoryStore[key] : null;
+                },
+                setItem(key, value) {
+                    if (available) {
+                        try { localStorage.setItem(key, value); return; } catch (e) { /* fallthrough */ }
+                    }
+                    memoryStore[key] = value;
+                },
+                removeItem(key) {
+                    if (available) {
+                        try { localStorage.removeItem(key); } catch (e) { /* fallthrough */ }
+                    }
+                    delete memoryStore[key];
+                }
+            };
+        })();
+
+        // Data Fallback dan Kunci Jawaban Utama
+        const EXAM_CONFIG = {
+            'Ujian 1': { // Penalaran Mekanikal (30 Soal)
+                1: { key: 'B', optionsCount: 3, exp: 'Analisis: Kapal B tenggelam lebih dalam (garis air lebih tinggi di lambung kapal). Berdasarkan Hukum Archimedes, semakin berat muatan kapal, semakin dalam lambung terbenam di air.' },
+                2: { key: 'A', optionsCount: 3, exp: 'Analisis: Tang A memiliki pegangan (lengan kuasa) yang lebih panjang. Menurut Prinsip Tuas, lengan kuasa yang lebih panjang memberikan keuntungan mekanis yang lebih besar sehingga memotong kawat terasa lebih ringan.' },
+                3: { key: 'A', optionsCount: 3, exp: 'Analisis: Roda dengan ban dipompa (A) memiliki luas permukaan kontak yang lebih besar. Semakin besar luas permukaan, semakin kecil tekanan yang diberikan ke tanah lunak, sehingga roda tidak mudah amblas.' },
+                4: { key: 'C', optionsCount: 3, exp: 'Analisis: Untuk memperlambat putaran (reduksi kecepatan), roda yang digerakkan harus memiliki keliling/diameter yang lebih besar dari roda penggerak. Puli 3 adalah roda terbesar di bawah.' },
+                5: { key: 'A', optionsCount: 2, exp: 'Analisis: Hukum Aksi-Reaksi Newton. Agar kapal bergerak maju, roda dayung harus mendorong air ke belakang (ke kanan). Ini berarti roda dayung harus berputar berlawanan arah jarum jam (Arah A).' },
+                6: { key: 'A', optionsCount: 4, exp: 'Analisis: Ini adalah sistem neraca lengan (seperti dacin). Setiap lengan bertumpu pada titik tetap di dinding, dengan kotak beban tergantung di sisi pendek dan penanda penyeimbang di sisi panjang. Sesuai prinsip torsi (berat x jarak), semakin berat beban, semakin jauh penyeimbang harus digeser dari titik tumpu agar lengan tetap seimbang. Pada gambar A, penanda penyeimbang berada paling jauh dari titik tumpu dibanding B dan C, sehingga kotak A adalah yang paling berat.' },
+                7: { key: 'A', optionsCount: 2, exp: 'Analisis: Sabuk yang menyilang membalikkan arah putaran. Roda M (searah jarum jam) memutar puli bawah berlawanan jarum jam, yang kemudian memutar roda X searah dengannya (arah A).' },
+                8: { key: 'B', optionsCount: 4, exp: 'Analisis: Transmisi roda gigi bersinggungan membalikkan arah. M (searah jarum jam) -> Tengah (berlawanan jarum jam) -> X (searah jarum jam/B). Karena X lebih besar dari M, putaran X menjadi lebih lambat dari M.' },
+                9: { key: 'A', optionsCount: 5, exp: 'Analisis: Melacak jalur sabuk: Sabuk menyilang membalik arah, sabuk lurus mempertahankan arah. Jalur roda 1 dan roda 3 terbukti searah dengan Roda Penggerak (berlawanan arah jarum jam).' },
+                10: { key: 'C', optionsCount: 3, exp: 'Analisis: Ini adalah mekanisme engkol-peluncur (crank-slider). Putaran searah pada roda gila M akan secara ritmis menarik dan mendorong tuas, menghasilkan gerakan translasi bolak-balik pada plat besi.' },
+                11: { key: 'B', optionsCount: 3, exp: 'Analisis: Roda penggerak kecil (searah jarum jam) menekan gigi dalam roda besar di sisi kirinya. Dorongan ke bawah pada kontak roda di sisi kiri akan memutar roda besar tersebut berlawanan arah jarum jam (Arah B).' },
+                12: { key: 'C', optionsCount: 4, exp: 'Analisis: As 1 (searah jarum jam) memutar as tengah (berlawanan jarum jam), yang lalu memutar As 2 (searah jarum jam / Arah A). Karena roda penggerak yang kecil menggerakkan roda yang besar pada kedua tahap, kecepatannya direduksi (melambat).' },
+                13: { key: 'D', optionsCount: 5, exp: 'Analisis: Untuk mendaki bukit dibutuhkan torsi (gaya dorong) maksimal. Rasio putaran teringan dicapai dengan gir pedal depan yang sekecil mungkin, dihubungkan ke gir roda belakang yang sebesar mungkin (Gambar D).' },
+                14: { key: 'B', optionsCount: 4, exp: 'Analisis: Sabuk menyilang membalikkan arah roda penggerak (berlawanan jarum jam) menjadi searah jarum jam pada poros roda gigi besar. Roda gigi tersebut akan menggulung tali, sehingga beban batu tertarik naik (Arah B).' },
+                15: { key: 'C', optionsCount: 4, exp: 'Analisis: Pada sebuah sistem transmisi sabuk tunggal, kecepatan linier sabuk adalah sama. Roda dengan jari-jari/diameter paling kecil (Roda C) akan menghasilkan rotasi (putaran per menit) yang paling cepat.' },
+                16: { key: 'B', optionsCount: 4, exp: 'Analisis: Untuk meningkatkan kecepatan (RPM) as X yang digerakkan, poros penggerak harus dipindahkan ke roda dengan diameter terbesar (Roda 2), sementara sabuk bawah dipindah ke diameter terkecil (Roda 4).' },
+                17: { key: 'A', optionsCount: 2, exp: 'Analisis: Mekanisme pengungkit rem. Agar tuas bagian kiri (sepatu rem) turun menekan dan bergesekan dengan roda, gagang sebelah kanan harus ditarik ke ATAS (Arah A).' },
+                18: { key: 'B', optionsCount: 4, exp: 'Analisis: Bantalan peluru (ball bearing) pada gambar B dilengkapi dengan sangkar pelindung (retainer/cage) yang memisahkan jarak antar peluru. Hal ini mencegah friksi antar peluru dan memastikan bantalan berputar sangat halus.' },
+                19: { key: 'C', optionsCount: 3, exp: 'Analisis: Tonjolan pada piringan memutar (cam) akan secara bergantian menekan dan melepaskan lengan kiri tuas. Akibatnya, kepala palu di sisi kanan tuas akan bergerak secara ritmis (naik dan turun).' },
+                20: { key: 'D', optionsCount: 4, exp: 'Analisis: Sabuk menyilang membuat As 2 berputar berlawanan dari As 1 (yaitu arah B). Karena roda As 1 (penggerak) lebih kecil daripada roda As 2, putaran yang sampai di As 2 menjadi direduksi (lebih lambat).' },
+                21: { key: 'A', optionsCount: 4, exp: 'Analisis: Hukum Tekanan Hidrostatis. Tekanan air berbanding lurus dengan kedalaman. Selang pada tangki A berada di posisi paling dasar/dalam, sehingga memiliki tekanan dan arus air yang paling deras.' },
+                22: { key: 'E', optionsCount: 5, exp: 'Analisis: Sistem roda gigi tertutup. Jika Anda menghitung jumlah total roda gigi yang saling mengunci dalam lingkaran tersebut, jumlahnya adalah ganjil (7 buah). Rangkaian melingkar dengan jumlah gigi ganjil akan mengunci mekanismenya sendiri (tidak bisa berputar/macet).' },
+                23: { key: 'A', optionsCount: 4, exp: 'Analisis: Sabuk atas berputar ke kiri, memutar kedua roda kecil berlawanan jarum jam. Roda kecil kanan memiliki diameter lebih besar daripada roda kecil kiri. Sehingga, roda kanan mengulur tali lebih cepat daripada roda kiri menggulungnya, akibatnya kotak bergerak turun (Arah A).' },
+                24: { key: 'C', optionsCount: 4, exp: 'Analisis: Ini adalah tuas penghubung. Roda kecil berputar penuh, namun jarak engkolnya terlalu pendek untuk mendorong roda besar berputar penuh. Akibatnya, tuas hanya akan menarik dan mendorong roda besar maju-mundur secara bolak-balik.' },
+                25: { key: 'D', optionsCount: 4, exp: 'Analisis: Rasio lengan kuasa dibandingkan lengan beban pada tuas A (2m:1m), tuas B (4m:2m), dan tuas C (6m:3m) semuanya adalah identik, yakni 2:1. Karena keuntungan mekanisnya sama, beban timbangan yang diperlukan juga persis sama.' },
+                26: { key: 'C', optionsCount: 5, exp: 'Analisis: Untuk menghasilkan torsi maksimal dengan tenaga paling kecil, dorongan harus tegak lurus (90 derajat) terhadap lengan tuas. Karena tuas berada pada posisi horizontal, tarikan yang tegak lurus adalah tarikan vertikal lurus ke bawah (Arah C).' },
+                27: { key: 'C', optionsCount: 4, exp: 'Analisis: Roda gigi cacing (worm gear). Saat poros cacing berputar, ulir tersebut bergerak maju layaknya satu garis lurus. Ulir ini mendorong bagian bawah Roda X dan bagian atas Roda Y ke arah yang sama, sehingga Roda X dan Y justru berputar berlawanan arah.' },
+                28: { key: 'C', optionsCount: 5, exp: 'Analisis: Mekanisme Geneva Drive. Pin pada roda Y yang berputar konstan hanya akan menggerakkan roda X ketika pin tersebut masuk ke dalam celah. Ini menghasilkan rotasi roda X yang terputus-putus/tersendat (bergerak tak teratur ke arah A).' },
+                29: { key: 'C', optionsCount: 5, exp: 'Analisis: Roda Maxwell/Yo-yo. Saat dijatuhkan, beban pegas berkurang (karena efek jatuh bebas), panah naik ke A. Saat mencapai ujung bawah tali, roda menyentak (inersia) membuat pegas meregang tajam ke B, lalu roda memanjat naik lagi. Polanya adalah bolak-balik berosilasi.' },
+                30: { key: 'C', optionsCount: 3, exp: 'Analisis: Dua poros padat dihubungkan oleh DUA pasang roda gigi dengan ukuran rasio yang berbeda secara bersamaan. Secara fisika, poros ini akan saling mengunci (jammed) karena satu poros tidak mungkin berputar dengan dua kecepatan berbeda sekaligus. Sistem tidak bergerak.' }
+            },
+            'Ujian 2': { // Kecermatan Gambar (30 Soal)
+                1: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A memiliki sudut potongan, kelengkapan elemen garis, dan proporsi bentuk yang paling presisi sesuai acuan.' },
+                2: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B menunjukkan kesesuaian kemiringan sumbu simetri serta kontinuitas garis tepi secara utuh tanpa deformasi.' },
+                3: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C memiliki ketebalan garis tepi, kontras ruang, dan kerapatan tekstur yang selaras dengan kriteria target.' },
+                4: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A memenuhi rasio orientasi spasial dan ketelitian potongan sudut yang identik dengan sampel utama.' },
+                5: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B memperlihatkan konsistensi alur simetri dan kerapatan titik potong visual yang sempurna.' },
+                6: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C mempertahankan kontras warna, orientasi rotasi, serta kelengkapan ornamen geometri secara utuh.' },
+                7: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A presisi secara rotasi bidang, panjang ruas garis, dan tidak kehilangan bagian detail sudut.' },
+                8: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B menunjukkan kesesuaian hubungan antar-elemen ruang serta ketelitian bentuk yang tepat.' },
+                9: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C selaras dengan pola sudut melengkung dan kelurusan sumbu vertikal pada sampel gambar.' },
+                10: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A memiliki keseimbangan proporsi bidang hitam-putih dan kedudukan titik pusat yang akurat.' },
+                11: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B konsisten pada arah kemiringan diagonal dan jumlah irisan elemen bidang.' },
+                12: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C secara sempurna mencocokkan pola tumpang-tindih (overlapping) antar bidang geometri.' },
+                13: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A memiliki orientasi simetri cermin (mirror reflection) dan detail garis tepi yang tepat.' },
+                14: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B memenuhi kriteria perbandingan skala horizontal dan kerapatan arsir yang sesuai.' },
+                15: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C menunjukkan kelengkapan komponen ornamen utama tanpa ada distorsi bentuk.' },
+                16: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A mempertahankan sudut inklinasi dan kesinambungan segmen garis melengkung.' },
+                17: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B presisi dalam penataan variabel ruang terbuka dan rasio penampang.' },
+                18: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C tepat pada susunan letak elemen interior dan keselarasan garis potong.' },
+                19: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A menunjukkan ketepatan kontinuitas garis tepi serta kerapatan pola arsir silang.' },
+                20: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B memenuhi kecermatan arah rotasi 90 derajat serta integritas komponen bundar.' },
+                21: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C memiliki kecocokan bentuk acuan pada ketebalan segmen dan orientasi puncak geometri.' },
+                22: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A selaras dengan distribusi kerapatan bintik dan simetri cermin vertikal.' },
+                23: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B menunjukkan ketelitian posisi nodus/titik temu antar garis pembentuk.' },
+                24: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C konsisten pada rasio ketinggian bangun dan keseimbangan pola arsir.' },
+                25: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A presisi dalam mencocokkan kelengkapan sudut tajam dan potongan bidang melintang.' },
+                26: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B memenuhi kriteria kontras arsir miring dan kedudukan elemen periferal.' },
+                27: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C menunjukkan keselarasan sudut elevasi dan kesinambungan kurva penutup.' },
+                28: { key: 'A', optionsCount: 3, exp: 'Analisis: Pilihan A memiliki kecocokan sempurna pada titik pusat simetri dan kelengkapan segmen luar.' },
+                29: { key: 'B', optionsCount: 3, exp: 'Analisis: Pilihan B memperlihatkan ketepatan rasio bidang terarsir terhadap luas keseluruhan.' },
+                30: { key: 'C', optionsCount: 3, exp: 'Analisis: Pilihan C selaras pada orientasi pasangannya berdasarkan kontinuitas garis vertikal.' }
+            },
+            'Ujian 3': {
+                1: { key: 'X', exp: 'Tes Perseptual Soal 1: [X] Terdapat perbedaan detail kecil pada ketebalan garis, titik, atau orientasi sudut antara kedua objek.' },
+                2: { key: 'O', exp: 'Tes Perseptual Soal 2: [O] Kedua bentuk bangun identik secara sempurna di seluruh sisi.' }
+            },
+            'Ujian 4': { // Tes Matriks Gambar (30 Soal)
+                1: { key: '6', optionsCount: 6, exp: 'Melengkapi variasi tekstur (Arsir Silang/Grid) pada baris 3.' },
+                2: { key: '4', optionsCount: 5, exp: 'Panah menghadap Kanan dengan tekstur arsir bintik.' },
+                3: { key: '3', optionsCount: 6, exp: 'Kapsul bertekstur bintik halus.' },
+                4: { key: '6', optionsCount: 6, exp: 'Ekspresi wajah senyum dengan mata garis/kedip.' },
+                5: { key: '5', optionsCount: 5, exp: 'Kapsul/Cangkir terbalik bertekstur bintik.' },
+                6: { key: '1', optionsCount: 4, exp: 'Balon kata "3" dengan ekor menghadap bawah.' },
+                7: { key: '2', optionsCount: 6, exp: 'Matriks grid berukuran penuh 3x3 kotak.' },
+                8: { key: '6', optionsCount: 6, exp: 'Balok L bintik dengan rotasi 270 derajat.' },
+                9: { key: '4', optionsCount: 5, exp: 'Simbol geometri belah ketupat/jajaran genjang bertekstur arsir.' },
+                10: { key: '1', optionsCount: 5, exp: 'Pasangan 1 panah vertikal berekor garis.' },
+                
+                11: { key: '5', optionsCount: 6, exp: 'Rotasi panah lurus. Baris 3 membutuhkan orientasi vertikal.' },
+                12: { key: '2', optionsCount: 6, exp: 'Variasi ornamen pada bentuk wajik. Memerlukan wajik pola arsir atas.' },
+                13: { key: '6', optionsCount: 6, exp: 'Transformasi susunan blok hitam pada salib.' },
+                14: { key: '3', optionsCount: 5, exp: 'Variasi ekor panah dan ujung tombak.' },
+                15: { key: '4', optionsCount: 6, exp: 'Penambahan jumlah garis/pagar vertikal. Kolom 3 butuh 4 garis utuh.' },
+                16: { key: '1', optionsCount: 5, exp: 'Orang-orangan hewan kaki bertambah berurutan. Membutuhkan hewan 4 kaki lengkung.' },
+                17: { key: '3', optionsCount: 5, exp: 'Variasi perpaduan persegi panjang warna.' },
+                18: { key: '1', optionsCount: 5, exp: 'Pola panah bertingkat Totem.' },
+                19: { key: '1', optionsCount: 5, exp: 'Deret angka penjumlahan bertingkat: 22, 29 (+7), 37 (+8), 46 (+9). Maka 46 + 10 = 56.' },
+                20: { key: '2', optionsCount: 5, exp: 'Penataan geometri bertingkat dengan perpaduan warna hitam-putih.' },
+
+                21: { key: '3', optionsCount: 6, exp: 'Penumpukan arah atap segitiga beserta tekstur arsirannya.' },
+                22: { key: '1', optionsCount: 6, exp: 'Lencana persegi panjang dengan variasi posisi simbol (+) dan (-).' },
+                23: { key: '4', optionsCount: 6, exp: 'Gagang dan ekstensi tambahan pada simbol geometris utama.' },
+                24: { key: '2', optionsCount: 6, exp: 'Kotak dengan huruf S, O, Segitiga dan letak gagang.' },
+                25: { key: '5', optionsCount: 6, exp: 'Persegi panjang miring dua dengan simbol (+) dan titik.' },
+                26: { key: '2', optionsCount: 6, exp: 'Denah tata letak bangunan dan posisi blok jendela hitam.' },
+                27: { key: '1', optionsCount: 6, exp: 'Simbol wajah datar/senyum di dalam bangun geometri.' },
+                28: { key: '4', optionsCount: 6, exp: 'Arah putaran kait spiral melengkapi rotasi baris ke-3.' },
+                29: { key: '3', optionsCount: 6, exp: 'Stick figure dengan variasi kepala, badan, dan kaki.' },
+                30: { key: '5', optionsCount: 6, exp: 'Simbol silang tumpuk dengan tekstur arsir jaring.' }
+            }
+        };
+
+        const FALLBACK_DATABASE = { 'Ujian 1': [], 'Ujian 2': [], 'Ujian 3': [], 'Ujian 4': [] };
+        let ACTIVE_DATABASE = JSON.parse(JSON.stringify(FALLBACK_DATABASE));
+        const INTRO_IMAGE_DRIVE_ID = {};
+
+        window.currentPortal = 'student';
+        let selectedModule = 'Ujian 1';
+        let studentData = { name: '', class: '' };
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let examTimer = null;
+        let timeRemaining = 720; // 12 Menit
+        let pendingConfirmAction = null;
+        let activeCropType = 'full';
+        let autoNextTimeout = null;
+
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxy9geo8yILE2NuvWZlPde-EONikVGHhpFGYr6P45Xnnptt4llhn-aztAfHUCVyfAWh5w/exec";
+        
+        function getFolderIdForModule(moduleName) {
+            const ids = {
+                'Ujian 1': '154PSwILCcqj2w9QDPNvzTO4DWiyB-Osz', // Penalaran Mekanikal
+                'Ujian 2': '1wWYGb8K7rgZaHXHV4eiEVydB44dJh-8Y', // Kecermatan Gambar
+                'Ujian 3': '1mAEY3y6HtbI_fFpOD7xz8FLfnj74_ykM', // Tes Perseptual
+                'Ujian 4': '1KZpcjNyOZ2uopwcscb7F0SnN80PGIN-5' // Tes Matriks Gambar
+            };
+            return ids[moduleName] || null;
+        }
+
+        async function fetchQuestionsFromDriveFolder(moduleName) {
+            const folderId = getFolderIdForModule(moduleName);
+
+            if (!GAS_URL || !folderId) return ACTIVE_DATABASE[moduleName] || [];
+
+            try {
+                const response = await fetch(`${GAS_URL}?folderId=${folderId}`);
+                const data = await response.json();
+
+                if (data && Array.isArray(data) && data.length > 0) {
+                    data.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+
+                    let introFile;
+                    let questionFiles = [];
+
+                    if (moduleName === 'Ujian 3' || moduleName === 'Ujian 4') {
+                        introFile = data.find(f => {
+                            const name = (f.name || '').toLowerCase();
+                            return name.includes('contoh') || name.includes('intro') || name.includes('petunjuk') || name.startsWith('1.') || name === '1';
+                        }) || data[0];
+
+                        if (introFile) {
+                            INTRO_IMAGE_DRIVE_ID[moduleName] = introFile.id;
+                            questionFiles = data.filter(f => f.id !== introFile.id);
+                        } else {
+                            questionFiles = [...data];
+                        }
+                    } else if (moduleName === 'Ujian 1' || moduleName === 'Ujian 2') {
+                        let introKeyword = moduleName === 'Ujian 1' ? '0829' : '0849'; // Ujian 1 mekanikal (0829), Ujian 2 kecermatan (0849)
+                        introFile = data.find(f => f.name && f.name.toUpperCase().includes(introKeyword)) || data[0];
+                        if (introFile) {
+                            INTRO_IMAGE_DRIVE_ID[moduleName] = introFile.id;
+                            questionFiles = data.filter(f => f.id !== introFile.id);
+                        } else {
+                            questionFiles = [...data];
+                        }
+                    }
+
+                    let dynamicQuestions = [];
+                    let qNum = 1;
+
+                    if (moduleName === 'Ujian 1' || moduleName === 'Ujian 2') {
+                        let generatedCount = 0; 
+                        questionFiles.forEach((fileObj) => {
+                            if (generatedCount >= 30) return; // Batasi 30 Soal
+
+                            // Pembacaan soal sisi kiri gambar (Ganjil)
+                            let q1Id = qNum++;
+                            generatedCount++; 
+                            let defaultKey1 = (moduleName === 'Ujian 1') ? 'A' : ['A', 'B', 'C'][(q1Id - 1) % 3];
+                            let config1 = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][q1Id]) 
+                                ? EXAM_CONFIG[moduleName][q1Id] 
+                                : { key: defaultKey1, optionsCount: (moduleName === 'Ujian 1' ? 4 : 3), exp: `Soal ${q1Id}: Berdasarkan analisis logika.` };
+                            dynamicQuestions.push({ id: q1Id, driveId: fileObj.id, cropType: 'left', optionsCount: config1.optionsCount || 4, key: config1.key || defaultKey1, explanation: config1.exp });
+
+                            if (generatedCount >= 30) return;
+
+                            // Pembacaan soal sisi kanan gambar (Genap)
+                            let q2Id = qNum++;
+                            generatedCount++;
+                            let defaultKey2 = (moduleName === 'Ujian 1') ? 'B' : ['A', 'B', 'C'][(q2Id - 1) % 3];
+                            let config2 = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][q2Id]) 
+                                ? EXAM_CONFIG[moduleName][q2Id] 
+                                : { key: defaultKey2, optionsCount: (moduleName === 'Ujian 1' ? 4 : 3), exp: `Soal ${q2Id}: Berdasarkan analisis logika.` };
+                            dynamicQuestions.push({ id: q2Id, driveId: fileObj.id, cropType: 'right', optionsCount: config2.optionsCount || 4, key: config2.key || defaultKey2, explanation: config2.exp });
+                        });
+                    } else if (moduleName === 'Ujian 3') {
+                        let generatedCount = 0;
+                        questionFiles.forEach((fileObj) => {
+                            if (generatedCount >= 80) return;
+                            for(let r=1; r<=10; r++) {
+                                for(let c=1; c<=4; c++) {
+                                    if (generatedCount >= 80) return;
+                                    let qId = qNum++;
+                                    generatedCount++;
+                                    let defaultConfig = (qId % 2 === 0) 
+                                        ? { key: 'X', exp: `Tes Perseptual Soal ${qId}: [X] Terdapat perbedaan detail orientasi sudut atau ketebalan pada objek.` }
+                                        : { key: 'O', exp: `Tes Perseptual Soal ${qId}: [O] Kedua bangun identik secara sempurna.` };
+                                    let config = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][qId]) ? EXAM_CONFIG[moduleName][qId] : defaultConfig;
+                                    dynamicQuestions.push({ 
+                                        id: qId, 
+                                        driveId: fileObj.id, 
+                                        cropType: `grid-${r}-${c}`, 
+                                        optionsCount: 2, 
+                                        key: config.key, 
+                                        explanation: config.exp 
+                                    });
+                                }
+                            }
+                        });
+                    } else if (moduleName === 'Ujian 4') {
+                        let generatedCount = 0;
+                        questionFiles.forEach((fileObj) => {
+                            if (generatedCount >= 30) return;
+                            for(let r=1; r<=5; r++) {
+                                for(let c=1; c<=2; c++) {
+                                    if (generatedCount >= 30) return;
+                                    let qId = qNum++;
+                                    generatedCount++;
+                                    let config = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][qId]) 
+                                        ? EXAM_CONFIG[moduleName][qId] 
+                                        : {key:'1', optionsCount:6, exp:`Tes Matriks Gambar Soal ${qId}: Melengkapi pola baris dan kolom.`};
+                                    dynamicQuestions.push({
+                                        id: qId,
+                                        driveId: fileObj.id,
+                                        cropType: `tmg-${r}-${c}`,
+                                        optionsCount: config.optionsCount || 6,
+                                        key: config.key || '1',
+                                        explanation: config.exp || 'Pembahasan TMG.'
+                                    });
+                                }
+                            }
+                        });
+                    }
+
+                    ACTIVE_DATABASE[moduleName] = dynamicQuestions;
+                    return dynamicQuestions;
+                }
+            } catch (err) {
+                console.warn('Gagal mengambil folder dari Drive API.', err);
+            }
+            return ACTIVE_DATABASE[moduleName] || [];
+        }
+
+        function createRobustImg(driveId, extraClass = '') {
+            const img = document.createElement('img');
+            img.referrerPolicy = 'no-referrer';
+            // Lazy load + async decode: penting untuk halaman evaluasi Ujian 3/4
+            // yang menampilkan puluhan gambar sekaligus. Tanpa ini, Safari di iPhone
+            // bisa kehabisan memori dan tab menjadi blank putih saat modal evaluasi dibuka.
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            const urls = [
+                `https://lh3.googleusercontent.com/d/${driveId}`,
+                `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`,
+                `https://docs.google.com/uc?export=view&id=${driveId}`
+            ];
+            let currentUrlIndex = 0;
+            if (extraClass) img.className = extraClass;
+            img.src = urls[currentUrlIndex];
+            
+            img.onerror = function() {
+                currentUrlIndex++;
+                if (currentUrlIndex < urls.length) {
+                    img.src = urls[currentUrlIndex];
+                } else {
+                    const parent = img.parentElement;
+                    if (parent) {
+                        const errDiv = document.createElement('div');
+                        errDiv.className = 'text-center p-6 bg-amber-50 border border-amber-200 rounded-xl w-full flex flex-col items-center justify-center min-h-[250px]';
+                        errDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl mb-2"></i><p class="text-xs text-amber-800 font-semibold">Gagal memuat gambar dari Drive.</p>`;
+                        parent.replaceChild(errDiv, img);
+                    }
+                }
+            };
+            return img;
+        }
+
+        function showAlert(msg, title = "Pemberitahuan", iconClass = "fa-solid fa-triangle-exclamation", iconBg = "bg-amber-100 text-amber-600") {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('alert-icon').className = `w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl ${iconBg}`;
+            document.getElementById('alert-icon').innerHTML = `<i class="${iconClass}"></i>`;
+            document.getElementById('modal-alert').classList.remove('hidden');
+        }
+
+        function closeAlertModal() {
+            document.getElementById('modal-alert').classList.add('hidden');
+        }
+
+        function showConfirm(msg, title, onConfirm) {
+            document.getElementById('confirm-title').innerText = title || "Konfirmasi";
+            document.getElementById('confirm-msg').innerText = msg;
+            pendingConfirmAction = onConfirm;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            pendingConfirmAction = null;
+        }
+
+        document.getElementById('btn-confirm-yes').onclick = function() {
+            if (pendingConfirmAction) {
+                const action = pendingConfirmAction;
+                closeConfirmModal();
+                action();
+            }
+        };
+
+        function togglePortal() {
+            if (window.currentPortal === 'student') {
+                document.getElementById('modal-pin').classList.remove('hidden');
+                document.getElementById('input-pin').focus();
+            } else {
+                window.currentPortal = 'student';
+                document.getElementById('portal-btn-text').innerText = 'Akses Pengajar';
+                document.getElementById('view-teacher-dashboard').classList.add('hidden');
+                document.getElementById('view-student-home').classList.remove('hidden');
+            }
+        }
+
+        function closePinModal() {
+            document.getElementById('modal-pin').classList.add('hidden');
+            document.getElementById('input-pin').value = '';
+        }
+
+        window.renderTeacherResults = function() {
+            const results = window.firestoreReady ? window.examResultsData : JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+            
+            const tbody = document.getElementById('teacher-results-body');
+            tbody.innerHTML = '';
+
+            document.getElementById('stat-total-students').innerText = results.length;
+
+            if (results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400">Belum ada data hasil ujian.</td></tr>`;
+                document.getElementById('stat-avg-score').innerText = '0';
+                document.getElementById('stat-highest-score').innerText = '0';
+                return;
+            }
+
+            const totalScore = results.reduce((acc, r) => acc + r.score, 0);
+            const maxScore = Math.max(...results.map(r => r.score));
+
+            document.getElementById('stat-avg-score').innerText = Math.round(totalScore / results.length);
+            document.getElementById('stat-highest-score').innerText = maxScore;
+
+            results.forEach(res => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-slate-500 text-xs">${res.dateStr}</td>
+                    <td class="py-3 px-4 font-bold text-slate-800">${escapeHtml(res.studentName)}</td>
+                    <td class="py-3 px-4 text-slate-600 font-medium">${escapeHtml(res.studentClass)}</td>
+                    <td class="py-3 px-4 text-indigo-600 font-bold">${res.module}</td>
+                    <td class="py-3 px-4 text-center font-semibold">${res.answeredCount}/${res.totalQuestions}</td>
+                    <td class="py-3 px-4 text-center text-emerald-600 font-bold">${res.correctCount}</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${res.score >= 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                            ${res.score}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openEvaluationFromTeacher('${res.id}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1 px-2.5 rounded-lg border border-indigo-200 transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-eye"></i> Lihat Detail
+                            </button>
+                            <button onclick="deleteOneResult('${res.fsDocId || res.id}', '${escapeHtml(res.studentName)}')" title="Hapus data ini" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1 px-2.5 rounded-lg border border-red-200 transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        function deleteOneResult(resultId, studentName) {
+            showConfirm(
+                `Apakah Anda yakin ingin menghapus data hasil ujian milik "${studentName}" secara permanen?`,
+                "Hapus Data Ini",
+                async function() {
+                    if (window.firestoreReady) {
+                        const ok = await window.deleteResultFromFirestore(resultId);
+                        if (!ok) {
+                            showAlert("Gagal menghapus data di Cloud. Silakan coba lagi.", "Error");
+                        }
+                        // onSnapshot listener akan otomatis merender ulang tabel setelah data terhapus
+                    } else {
+                        let existing = JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+                        existing = existing.filter(r => r.id !== resultId);
+                        safeStorage.setItem('psikotes_results', JSON.stringify(existing));
+                        window.renderTeacherResults();
+                    }
+                }
+            );
+        }
+
+        function verifyTeacherPin() {
+            const pin = document.getElementById('input-pin').value;
+            if (pin === '5222') {
+                closePinModal();
+                window.currentPortal = 'teacher';
+                document.getElementById('portal-btn-text').innerText = 'Mode Peserta';
+                
+                document.getElementById('view-student-home').classList.add('hidden');
+                document.getElementById('view-student-intro').classList.add('hidden');
+                document.getElementById('view-student-test').classList.add('hidden');
+                document.getElementById('view-student-finished').classList.add('hidden');
+                document.getElementById('view-teacher-dashboard').classList.remove('hidden');
+                
+                window.renderTeacherResults();
+            } else {
+                showAlert('PIN Salah! Akses ditolak.', 'Akses Ditolak', 'fa-solid fa-lock', 'bg-red-100 text-red-600');
+                document.getElementById('input-pin').value = '';
+            }
+        }
+
+        async function prepareExam(moduleName) {
+            const name = document.getElementById('student-name').value.trim();
+            const studentClass = document.getElementById('student-class').value;
+
+            if (!name || !studentClass) {
+                showAlert('Harap isi Nama Lengkap dan Kategori Pendaftaran terlebih dahulu!', 'Data Belum Lengkap');
+                return;
+            }
+
+            selectedModule = moduleName;
+            studentData = { name, class: studentClass };
+
+            document.getElementById('intro-exam-name').innerText = moduleName;
+            document.getElementById('view-student-home').classList.add('hidden');
+            document.getElementById('view-student-intro').classList.remove('hidden');
+
+            const introContainer = document.getElementById('intro-img-container');
+            introContainer.innerHTML = `<div class="py-8 text-center"><i class="fa-solid fa-spinner fa-spin text-indigo-600 text-2xl mb-2 block"></i><span class="text-xs text-slate-500">Memuat panduan & soal dari server...</span></div>`;
+
+            const questions = await fetchQuestionsFromDriveFolder(moduleName);
+
+            introContainer.innerHTML = '';
+            const introId = INTRO_IMAGE_DRIVE_ID[moduleName];
+
+            if (introId) {
+                const img = createRobustImg(introId, 'w-full h-auto object-contain rounded-lg shadow-sm border border-slate-200');
+                introContainer.appendChild(img);
+            } else {
+                introContainer.innerHTML = `<div class="text-center p-6 bg-slate-50 rounded-xl"><i class="fa-solid fa-folder-open text-slate-400 text-3xl mb-2"></i><p class="text-xs text-slate-500 font-semibold">Gambar Petunjuk Kosong</p></div>`;
+            }
+        }
+
+        function cancelIntro() {
+            document.getElementById('view-student-intro').classList.add('hidden');
+            document.getElementById('view-student-home').classList.remove('hidden');
+        }
+
+        function startExamFromIntro() {
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            if (questions.length === 0) {
+                showAlert(`Soal untuk ${selectedModule} belum tersedia di sistem.`, 'Soal Belum Ada');
+                return;
+            }
+
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            timeRemaining = 720; 
+
+            document.getElementById('test-student-name').innerText = studentData.name;
+            document.getElementById('test-student-class').innerText = studentData.class;
+            document.getElementById('test-module-badge').innerText = selectedModule;
+
+            document.getElementById('view-student-intro').classList.add('hidden');
+            document.getElementById('view-student-test').classList.remove('hidden');
+
+            renderQuestion();
+            renderNavGrid();
+
+            if (examTimer) clearInterval(examTimer);
+            examTimer = setInterval(() => {
+                timeRemaining--;
+                if (timeRemaining <= 0) {
+                    clearInterval(examTimer);
+                    showAlert('Waktu pengerjaan telah habis! Ujian akan dikumpulkan otomatis.', 'Waktu Habis', 'fa-solid fa-clock', 'bg-red-100 text-red-600');
+                    finishExam();
+                }
+            }, 1000);
+        }
+
+        function setCropMode(mode) {
+            activeCropType = mode;
+            updateCropToolbarButtons();
+
+            const wrapper = document.getElementById('crop-viewport-wrapper');
+            const img = document.getElementById('exam-question-img');
+            
+            if (!wrapper || !img) return;
+
+            if (mode === 'left' || mode === 'right') {
+                img.style.transform = 'none';
+                img.style.width = '';
+                img.className = 'w-[200%] max-w-none h-auto block transition-all duration-300';
+                wrapper.style.height = '400px';
+                wrapper.scrollTo({
+                    left: mode === 'left' ? 0 : wrapper.scrollWidth / 2,
+                    behavior: 'smooth'
+                });
+            } else if (mode.startsWith('row-')) {
+                img.style.transform = 'none';
+                img.style.width = '';
+                img.className = 'w-full h-auto block transition-all duration-300';
+                const rowNum = parseInt(mode.replace('row-', ''));
+                
+                setTimeout(() => {
+                    const rowHeight = img.clientHeight / 4;
+                    wrapper.style.height = `${rowHeight}px`;
+                    wrapper.scrollTo({
+                        top: (rowNum - 1) * rowHeight,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                }, 10);
+            } else if (mode.startsWith('grid-')) {
+                wrapper.classList.remove('overflow-hidden');
+                wrapper.classList.add('scroll-viewport', 'overflow-auto');
+                
+                img.className = 'w-[400%] max-w-none h-auto block relative transition-all duration-300';
+                img.style.transform = 'none';
+                
+                const parts = mode.split('-');
+                const rowNum = parseInt(parts[1]);
+                const colNum = parseInt(parts[2]);
+                
+                setTimeout(() => {
+                    const imgW = img.clientWidth;
+                    const imgH = img.clientHeight;
+                    
+                    const marginX = imgW * 0.038;
+                    const marginY = imgH * 0.039;
+                    const cellW = (imgW * 0.924) / 4;
+                    const cellH = (imgH * 0.922) / 10;
+                    
+                    wrapper.style.height = `${cellH + 30}px`;
+                    wrapper.scrollTo({
+                        top: (marginY + ((rowNum - 1) * cellH)) - 25, 
+                        left: marginX + ((colNum - 1) * cellW),
+                        behavior: 'smooth'
+                    });
+                }, 10);
+            } else if (mode.startsWith('tmg-')) {
+                wrapper.classList.remove('overflow-hidden');
+                wrapper.classList.add('scroll-viewport', 'overflow-auto');
+                
+                img.className = 'w-[210%] max-w-none h-auto block relative transition-all duration-300';
+                img.style.transform = 'none';
+                
+                const parts = mode.split('-');
+                const rowNum = parseInt(parts[1]);
+                const colNum = parseInt(parts[2]);
+                
+                setTimeout(() => {
+                    const imgW = img.clientWidth;
+                    const imgH = img.clientHeight;
+                    
+                    const marginX = imgW * 0.035;
+                    const marginY = imgH * 0.035;
+                    const cellW = (imgW * 0.93) / 2;
+                    const cellH = (imgH * 0.93) / 5;
+                    
+                    wrapper.style.height = `${cellH + 40}px`;
+                    wrapper.scrollTo({
+                        top: marginY + ((rowNum - 1) * cellH),
+                        left: marginX + ((colNum - 1) * cellW),
+                        behavior: 'smooth'
+                    });
+                }, 10);
+            } else {
+                img.style.transform = 'none';
+                img.style.width = '';
+                img.className = 'w-full h-auto object-contain transition-all duration-300';
+                wrapper.style.height = '450px';
+            }
+        }
+
+        function renderCropToolbar() {
+            const container = document.getElementById('crop-toolbar-container');
+            container.innerHTML = '';
+
+            let modes = [];
+            if (selectedModule === 'Ujian 1' || selectedModule === 'Ujian 2') modes = ['left', 'right', 'full'];
+            else if (selectedModule === 'Ujian 3' || selectedModule === 'Ujian 4') modes = [activeCropType, 'full'];
+            else modes = ['full'];
+
+            modes.forEach(m => {
+                const btn = document.createElement('button');
+                btn.onclick = () => setCropMode(m);
+                btn.id = `btn-crop-${m}`;
+                btn.className = "px-2 py-1 rounded-md bg-white text-slate-700 border border-slate-200 font-semibold transition text-xs whitespace-nowrap";
+                
+                let text = m;
+                if (m === 'left') text = 'Sisi Kiri';
+                if (m === 'right') text = 'Sisi Kanan';
+                if (m === 'row-1') text = 'Baris 1';
+                if (m === 'row-2') text = 'Baris 2';
+                if (m === 'row-3') text = 'Baris 3';
+                if (m === 'row-4') text = 'Baris 4';
+                if (m.startsWith('grid-') || m.startsWith('tmg-')) text = 'Fokus Soal';
+                if (m === 'full') text = 'Tampilan Penuh';
+                
+                btn.innerText = text;
+                container.appendChild(btn);
+            });
+            updateCropToolbarButtons();
+        }
+
+        function updateCropToolbarButtons() {
+            const container = document.getElementById('crop-toolbar-container');
+            const btns = container.querySelectorAll('button');
+            btns.forEach(btn => {
+                const modeId = btn.id.replace('btn-crop-', '');
+                if (modeId === activeCropType) {
+                    btn.className = "px-2.5 py-1 rounded-md bg-indigo-600 text-white border border-indigo-600 font-bold transition text-xs shadow-sm whitespace-nowrap";
+                } else {
+                    btn.className = "px-2.5 py-1 rounded-md bg-white text-slate-700 border border-slate-200 font-semibold transition text-xs hover:bg-slate-50 whitespace-nowrap";
+                }
+            });
+        }
+
+        function renderQuestion() {
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            const q = questions[currentQuestionIndex];
+            if (!q) return;
+
+            activeCropType = q.cropType || 'full';
+            renderCropToolbar();
+
+            const container = document.getElementById('question-render-container');
+            container.innerHTML = '';
+
+            const hint = document.createElement('p');
+            hint.className = 'text-[10px] text-slate-400 text-center mb-1.5 w-full font-medium';
+            
+            if (activeCropType.startsWith('grid-') || activeCropType.startsWith('tmg-')) {
+                hint.innerHTML = '<i class="fa-solid fa-up-down-left-right mr-1 text-indigo-500"></i> Anda dapat menggeser (scroll) gambar jika posisinya kurang pas';
+            } else {
+                hint.innerHTML = '<i class="fa-solid fa-up-down-left-right mr-1"></i> Anda dapat menggeser (scroll/swipe) gambar jika terpotong';
+            }
+            container.appendChild(hint);
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'crop-viewport-wrapper';
+            wrapper.className = 'scroll-viewport relative w-full rounded-xl overflow-auto border-2 border-slate-200 bg-white shadow-inner transition-all duration-300';
+
+            if (q.driveId) {
+                const img = createRobustImg(q.driveId);
+                img.id = 'exam-question-img';
+                
+                if (activeCropType === 'left' || activeCropType === 'right') {
+                    img.className = 'w-[200%] max-w-none h-auto block relative';
+                } else if (activeCropType.startsWith('row-')) {
+                    img.className = 'w-full h-auto block relative';
+                } else if (activeCropType.startsWith('grid-')) {
+                    img.className = 'w-[400%] max-w-none h-auto block relative';
+                } else if (activeCropType.startsWith('tmg-')) {
+                    img.className = 'w-[210%] max-w-none h-auto block relative';
+                } else {
+                    img.className = 'w-full h-auto object-contain relative';
+                }
+
+                img.onload = () => {
+                    if (activeCropType === 'left') {
+                        wrapper.style.height = '400px';
+                        wrapper.scrollLeft = 0;
+                    } else if (activeCropType === 'right') {
+                        wrapper.style.height = '400px';
+                        wrapper.scrollLeft = wrapper.scrollWidth / 2;
+                    } else if (activeCropType.startsWith('row-')) {
+                        const rowNum = parseInt(activeCropType.replace('row-', ''));
+                        const rowHeight = img.clientHeight / 4;
+                        wrapper.style.height = `${rowHeight}px`;
+                        wrapper.scrollTop = (rowNum - 1) * rowHeight;
+                        wrapper.scrollLeft = 0; 
+                    } else if (activeCropType.startsWith('grid-')) {
+                        const parts = activeCropType.split('-');
+                        const rowNum = parseInt(parts[1]);
+                        const colNum = parseInt(parts[2]);
+                        
+                        const imgW = img.clientWidth;
+                        const imgH = img.clientHeight;
+                        
+                        const marginX = imgW * 0.038;
+                        const marginY = imgH * 0.039;
+                        const cellW = (imgW * 0.924) / 4;
+                        const cellH = (imgH * 0.922) / 10;
+                        
+                        wrapper.style.height = `${cellH + 30}px`;
+                        wrapper.scrollTop = (marginY + ((rowNum - 1) * cellH)) - 25;
+                        wrapper.scrollLeft = marginX + ((colNum - 1) * cellW);
+                    } else if (activeCropType.startsWith('tmg-')) {
+                        const parts = activeCropType.split('-');
+                        const rowNum = parseInt(parts[1]);
+                        const colNum = parseInt(parts[2]);
+                        
+                        const imgW = img.clientWidth;
+                        const imgH = img.clientHeight;
+                        
+                        const marginX = imgW * 0.035;
+                        const marginY = imgH * 0.035;
+                        const cellW = (imgW * 0.93) / 2;
+                        const cellH = (imgH * 0.93) / 5;
+                        
+                        wrapper.style.height = `${cellH + 40}px`;
+                        wrapper.scrollTop = marginY + ((rowNum - 1) * cellH);
+                        wrapper.scrollLeft = marginX + ((colNum - 1) * cellW);
+                    } else {
+                        wrapper.style.height = '450px';
+                    }
+                };
+
+                wrapper.appendChild(img);
+            }
+            container.appendChild(wrapper);
+
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = '';
+            
+            let letters = [];
+            if (selectedModule === 'Ujian 3') {
+                letters = ['O', 'X'];
+            } else if (selectedModule === 'Ujian 4') {
+                const count = q.optionsCount || 6;
+                letters = ['1', '2', '3', '4', '5', '6'].slice(0, count);
+            } else {
+                const count = q.optionsCount || 5;
+                letters = ['A', 'B', 'C', 'D', 'E'].slice(0, count);
+            }
+
+            letters.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.onclick = () => selectOption(letter);
+                btn.id = `btn-opt-${letter}`;
+                let pxClass = letters.length > 4 ? 'px-4' : 'px-6';
+                btn.className = `option-btn bg-slate-50 border-2 border-slate-200 hover:border-indigo-500 font-extrabold text-lg sm:text-xl py-2.5 sm:py-3 ${pxClass} rounded-xl text-slate-800 ${userAnswers[currentQuestionIndex] === letter ? 'selected' : ''}`;
+                btn.innerText = letter;
+                optContainer.appendChild(btn);
+            });
+
+            document.querySelectorAll('.num-nav-btn').forEach((btn, idx) => {
+                btn.classList.remove('active');
+                if (idx === currentQuestionIndex) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.getElementById('btn-prev-q').disabled = (currentQuestionIndex === 0);
+            document.getElementById('btn-prev-q').style.opacity = (currentQuestionIndex === 0) ? '0.5' : '1';
+            
+            const isLast = (currentQuestionIndex === questions.length - 1);
+            document.getElementById('btn-next-q').innerText = isLast ? 'Selesai' : 'Berikutnya';
+        }
+
+        function renderNavGrid() {
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            const container = document.getElementById('nav-grid');
+            container.innerHTML = '';
+
+            questions.forEach((q, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `num-nav-btn w-8 h-8 rounded-lg border border-slate-200 text-xs font-semibold flex items-center justify-center ${userAnswers[idx] ? 'answered' : ''}`;
+                btn.innerText = q.id;
+                btn.onclick = () => {
+                    currentQuestionIndex = idx;
+                    renderQuestion();
+                };
+                container.appendChild(btn);
+            });
+
+            updateAnsweredBadge();
+        }
+
+        function selectOption(opt) {
+            userAnswers[currentQuestionIndex] = opt;
+            renderQuestion();
+            renderNavGrid();
+
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            if (currentQuestionIndex < questions.length - 1) {
+                if (autoNextTimeout) clearTimeout(autoNextTimeout);
+                autoNextTimeout = setTimeout(() => {
+                    currentQuestionIndex++;
+                    renderQuestion();
+                }, 400); 
+            }
+        }
+
+        function nextQuestion() {
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                confirmFinishExam();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function updateAnsweredBadge() {
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            const answeredCount = Object.keys(userAnswers).length;
+            document.getElementById('answered-count-badge').innerText = `Terjawab ${answeredCount}/${questions.length}`;
+        }
+
+        function confirmFinishExam() {
+            showConfirm(
+                "Apakah Anda yakin ingin menyelesaikan dan mengumpulkan jawaban ujian ini? Data akan terkirim secara otomatis ke sistem.",
+                "Kumpulkan Ujian",
+                finishExam
+            );
+        }
+
+        async function finishExam() {
+            if (examTimer) clearInterval(examTimer);
+
+            const questions = ACTIVE_DATABASE[selectedModule] || [];
+            let correctCount = 0;
+
+            questions.forEach((q, idx) => {
+                if (userAnswers[idx] === q.key) correctCount++;
+            });
+
+            const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+
+            const sanitizedAnswers = {};
+            for (let k in userAnswers) {
+                if (userAnswers[k] !== undefined) sanitizedAnswers[k] = userAnswers[k];
+            }
+
+            const sanitizedQuestions = questions.map(q => ({
+                id: q.id || 0,
+                driveId: q.driveId || '',
+                cropType: q.cropType || 'full',
+                key: q.key || 'A',
+                explanation: q.explanation || 'Belum ada penjelasan.'
+            }));
+
+            const examResult = {
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                dateStr: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                studentName: studentData.name,
+                studentClass: studentData.class,
+                module: selectedModule,
+                totalQuestions: questions.length,
+                answeredCount: Object.keys(userAnswers).length,
+                correctCount,
+                score,
+                userAnswers: sanitizedAnswers,
+                questionsSnapshot: sanitizedQuestions
+            };
+
+            let isCloudSaved = false;
+            if (window.saveResultToFirestore) {
+                isCloudSaved = await window.saveResultToFirestore(examResult);
+            }
+
+            if (!isCloudSaved) {
+                saveResultLocal(examResult);
+                document.getElementById('finished-cloud-icon').className = "fa-solid fa-floppy-disk text-amber-500 text-lg mb-1.5 block";
+                document.getElementById('finished-cloud-msg').innerText = "Hasil ujian disimpan secara lokal di perangkat Anda (Belum terhubung ke Cloud Firebase).";
+            } else {
+                document.getElementById('finished-cloud-icon').className = "fa-solid fa-cloud-arrow-up text-emerald-600 text-lg mb-1.5 block";
+                document.getElementById('finished-cloud-msg').innerText = "Hasil pengerjaan Anda telah berhasil tersimpan & disinkronkan ke Cloud Firebase!";
+            }
+
+            document.getElementById('view-student-test').classList.add('hidden');
+            document.getElementById('finished-student-name').innerText = studentData.name;
+            document.getElementById('view-student-finished').classList.remove('hidden');
+        }
+
+        function saveResultLocal(result) {
+            let existing = JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+            existing.unshift(result);
+            safeStorage.setItem('psikotes_results', JSON.stringify(existing));
+        }
+
+        function resetToHome() {
+            document.getElementById('view-student-finished').classList.add('hidden');
+            document.getElementById('view-student-home').classList.remove('hidden');
+            document.getElementById('form-register').reset();
+        }
+
+        function openEvaluationModal(result) {
+            document.getElementById('eval-student-info').innerText = `${result.studentName} (${result.studentClass}) • ${result.module} • ${result.dateStr}`;
+            
+            const badge = document.getElementById('eval-score-badge');
+            badge.innerText = `Nilai Akhir: ${result.score} (${result.correctCount}/${result.totalQuestions} Benar)`;
+            if (result.score >= 70) {
+                badge.className = "text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800";
+            } else {
+                badge.className = "text-xs font-bold px-3 py-1.5 rounded-full bg-amber-100 text-amber-800";
+            }
+
+            document.getElementById('modal-evaluation').classList.remove('hidden');
+
+            const container = document.getElementById('eval-content-body');
+            container.innerHTML = '';
+
+            const questions = result.questionsSnapshot || [];
+            
+            questions.forEach((q, idx) => {
+                const userChoice = result.userAnswers ? result.userAnswers[idx] : null;
+                const isCorrect = (userChoice === q.key);
+                const isAnswered = !!userChoice;
+
+                let statusBadge = '';
+                let borderStyle = '';
+
+                if (!isAnswered) {
+                    statusBadge = `<span class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-md"><i class="fa-solid fa-minus mr-1"></i>Tidak Dijawab</span>`;
+                    borderStyle = 'border-slate-200';
+                } else if (isCorrect) {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-md"><i class="fa-solid fa-check mr-1"></i>Jawaban Benar</span>`;
+                    borderStyle = 'border-emerald-200 bg-emerald-50/20';
+                } else {
+                    statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-md"><i class="fa-solid fa-xmark mr-1"></i>Jawaban Salah</span>`;
+                    borderStyle = 'border-red-200 bg-red-50/20';
+                }
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-2xl p-4 sm:p-5 border-2 ${borderStyle} shadow-sm space-y-4`;
+                
+                let wrapperClass = `scroll-viewport relative w-full rounded-xl overflow-auto border border-slate-200 bg-white mx-auto my-2`;
+
+                const imgWrap = document.createElement('div');
+                imgWrap.className = wrapperClass;
+                
+                if (q.driveId) {
+                    const img = createRobustImg(q.driveId);
+                    if (q.cropType === 'left' || q.cropType === 'right') {
+                        img.className = 'w-[200%] max-w-none h-auto block relative';
+                    } else if (q.cropType && q.cropType.startsWith('row-')) {
+                        img.className = 'w-full h-auto block relative';
+                    } else if (q.cropType && q.cropType.startsWith('grid-')) {
+                        img.className = 'w-[400%] max-w-none h-auto block relative';
+                    } else if (q.cropType && q.cropType.startsWith('tmg-')) {
+                        img.className = 'w-[210%] max-w-none h-auto block relative';
+                    } else {
+                        img.className = 'w-full h-auto object-contain relative';
+                    }
+                    
+                    img.onload = () => {
+                        if (q.cropType === 'left') {
+                            imgWrap.style.height = '250px';
+                            imgWrap.scrollLeft = 0;
+                        } else if (q.cropType === 'right') {
+                            imgWrap.style.height = '250px';
+                            imgWrap.scrollLeft = imgWrap.scrollWidth / 2;
+                        } else if (q.cropType && q.cropType.startsWith('row-')) {
+                            const rowNum = parseInt(q.cropType.replace('row-', ''));
+                            const rowHeight = img.clientHeight / 4;
+                            imgWrap.style.height = `${rowHeight}px`;
+                            imgWrap.scrollTop = (rowNum - 1) * rowHeight;
+                        } else if (q.cropType && q.cropType.startsWith('grid-')) {
+                            const parts = q.cropType.split('-');
+                            const rowNum = parseInt(parts[1]);
+                            const colNum = parseInt(parts[2]);
+                            
+                            const imgW = img.clientWidth;
+                            const imgH = img.clientHeight;
+                            
+                            const marginX = imgW * 0.038;
+                            const marginY = imgH * 0.039;
+                            const cellW = (imgW * 0.924) / 4;
+                            const cellH = (imgH * 0.922) / 10;
+                            
+                            imgWrap.style.height = `${cellH + 30}px`;
+                            imgWrap.scrollTop = (marginY + ((rowNum - 1) * cellH)) - 25; 
+                            imgWrap.scrollLeft = marginX + ((colNum - 1) * cellW);
+                        } else if (q.cropType && q.cropType.startsWith('tmg-')) {
+                            const parts = q.cropType.split('-');
+                            const rowNum = parseInt(parts[1]);
+                            const colNum = parseInt(parts[2]);
+                            
+                            const imgW = img.clientWidth;
+                            const imgH = img.clientHeight;
+                            
+                            const marginX = imgW * 0.035;
+                            const marginY = imgH * 0.035;
+                            const cellW = (imgW * 0.93) / 2;
+                            const cellH = (imgH * 0.93) / 5;
+                            
+                            imgWrap.style.height = `${cellH + 30}px`;
+                            imgWrap.scrollTop = marginY + ((rowNum - 1) * cellH);
+                            imgWrap.scrollLeft = marginX + ((colNum - 1) * cellW);
+                        } else {
+                            imgWrap.style.height = '250px';
+                        }
+                    };
+                    imgWrap.appendChild(img);
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="font-extrabold text-slate-800 text-sm">Soal Nomor ${q.id}</span>
+                        ${statusBadge}
+                    </div>
+
+                    <div id="eval-img-container-${idx}" class="flex justify-center my-2 relative w-full">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2 border-t border-slate-100">
+                        <div class="p-3 rounded-xl ${isCorrect ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}">
+                            <span class="text-slate-500 font-medium block">Jawaban Peserta:</span>
+                            <span class="text-base font-extrabold ${isCorrect ? 'text-emerald-700' : 'text-red-700'}">
+                                ${userChoice ? `Pilihan ${userChoice}` : 'Tidak Menjawab'}
+                            </span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200">
+                            <span class="text-slate-500 font-medium block">Kunci Jawaban Benar:</span>
+                            <span class="text-base font-extrabold text-indigo-700">Pilihan ${q.key}</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1">
+                        <strong class="text-indigo-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-lightbulb text-amber-500"></i> Pembahasan & Logika:
+                        </strong>
+                        <p class="leading-relaxed text-slate-600">${q.explanation}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                const targetContainer = document.getElementById(`eval-img-container-${idx}`);
+                if (targetContainer) targetContainer.appendChild(imgWrap);
+            });
+        }
+
+        function closeEvaluationModal() {
+            document.getElementById('modal-evaluation').classList.add('hidden');
+        }
+
+        function openEvaluationFromTeacher(resultId) {
+            const results = window.firestoreReady ? window.examResultsData : JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+            const res = results.find(r => r.id === resultId || r.fsDocId === resultId);
+            if (res) openEvaluationModal(res);
+            else showAlert("Data hasil ujian tidak ditemukan.", "Error");
+        }
+
+        function clearAllData() {
+            showConfirm(
+                "Apakah Anda yakin ingin menghapus SEMUA data hasil ujian secara permanen?",
+                "Hapus Semua Data",
+                async function() {
+                    if (window.firestoreReady) {
+                        document.getElementById('teacher-results-body').innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Menghapus data di Cloud...</td></tr>`;
+                        await window.clearFirestoreData();
+                    } else {
+                        safeStorage.removeItem('psikotes_results');
+                        window.renderTeacherResults();
+                    }
+                }
+            );
+        }
+
+        function exportToCSV() {
+            const results = window.firestoreReady ? window.examResultsData : JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+            if (results.length === 0) {
+                showAlert("Tidak ada data untuk diexport.", "Data Kosong");
+                return;
+            }
+
+            let csv = "Nama,Kategori,Modul,Tanggal,Dijawab,Benar,Nilai\n";
+            results.forEach(r => {
+                csv += `"${r.studentName}","${r.studentClass}","${r.module}","${r.dateStr}",${r.answeredCount}/${r.totalQuestions},${r.correctCount},${r.score}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hasil_ujian_psikotes_${Date.now()}.csv`;
+            a.click();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
+
+    <!-- FIREBASE INIT (Type Module) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Konfigurasi Firebase resmi project 'soalpsiko-b4e8a'
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4K1_2C-kHj16Ep8dp4lxqi8PJyqrnNKo",
+            authDomain: "soalpsiko-b4e8a.firebaseapp.com",
+            projectId: "soalpsiko-b4e8a",
+            storageBucket: "soalpsiko-b4e8a.firebasestorage.app",
+            messagingSenderId: "859710676597",
+            appId: "1:859710676597:web:84664c703a0b5d998a223c",
+            measurementId: "G-PHN9RZX1YE"
+        };
+        
+        window.examResultsData = [];
+        window.firestoreReady = false;
+
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.log("Firebase config tidak ditemukan.");
+                return;
+            }
+            
+            try {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+
+                // Autentikasi anonim atau custom token
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (tokenErr) {
+                        console.warn("Custom token mismatch/invalid, beralih ke Anonymous Auth:", tokenErr);
+                        await signInAnonymously(auth);
+                    }
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                window.firestoreReady = true;
+                window.firestoreDb = db;
+                window.firestoreAuth = auth;
+
+                // Menggunakan koleksi utama 'examResults' di root Firestore
+                const resultsRef = collection(db, 'examResults');
+                
+                // Real-time listener: data otomatis memperbarui diri ketika ada peserta ujian baru yang selesai
+                onSnapshot(resultsRef, (snapshot) => {
+                    window.examResultsData = [];
+                    snapshot.forEach(doc => {
+                        window.examResultsData.push({ ...doc.data(), fsDocId: doc.id });
+                    });
+                    
+                    // Mengurutkan data berdasarkan waktu terbaru
+                    window.examResultsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    const syncBadge = document.getElementById('cloud-sync-status');
+                    if (syncBadge) {
+                        syncBadge.innerHTML = '<i class="fa-solid fa-cloud-check mr-1"></i> Live';
+                        syncBadge.className = 'bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full';
+                    }
+
+                    // Memperbarui UI jika dashboard guru sedang terbuka
+                    if (window.currentPortal === 'teacher' && typeof window.renderTeacherResults === 'function') {
+                        window.renderTeacherResults();
+                    }
+                }, (error) => {
+                    console.error("Firestore listener mengalami masalah:", error);
+                    const syncBadge = document.getElementById('cloud-sync-status');
+                    if (syncBadge) {
+                        syncBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Rules/Auth Error';
+                        syncBadge.className = 'bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Inisialisasi Firebase/Auth gagal:", error);
+                const syncBadge = document.getElementById('cloud-sync-status');
+                if (syncBadge) {
+                    syncBadge.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Auth Disabled';
+                    syncBadge.className = 'bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full';
+                }
+            }
+        }
+
+        // Simpan data setiap peserta ke Firestore
+        window.saveResultToFirestore = async function(result) {
+            if (!window.firestoreReady || !window.firestoreAuth?.currentUser) {
+                console.warn("Firestore belum siap atau user belum terautentikasi.");
+                return false;
+            }
+            try {
+                const resultsRef = collection(window.firestoreDb, 'examResults');
+                await addDoc(resultsRef, result);
+                console.log("Berhasil menyimpan data peserta ke Firebase Firestore!");
+                return true;
+            } catch (e) {
+                console.error("Gagal menyimpan ke Firestore:", e);
+                return false;
+            }
+        };
+
+        window.deleteResultFromFirestore = async function(fsDocId) {
+            if (!window.firestoreReady || !window.firestoreAuth?.currentUser || !fsDocId) {
+                console.warn("Firestore belum siap, user belum terautentikasi, atau ID dokumen kosong.");
+                return false;
+            }
+            try {
+                await deleteDoc(doc(window.firestoreDb, 'examResults', fsDocId));
+                console.log("Berhasil menghapus 1 data peserta dari Firebase Firestore!");
+                return true;
+            } catch (e) {
+                console.error("Gagal menghapus data di Firestore:", e);
+                return false;
+            }
+        };
+
+        window.clearFirestoreData = async function() {
+            if (window.firestoreReady && window.firestoreAuth.currentUser) {
+                try {
+                    const resultsRef = collection(window.firestoreDb, 'examResults');
+                    const snapshot = await getDocs(resultsRef);
+                    const deletePromises = [];
+                    snapshot.forEach(document => {
+                        deletePromises.push(deleteDoc(doc(window.firestoreDb, 'examResults', document.id)));
+                    });
+                    await Promise.all(deletePromises);
+                    return true;
+                } catch (e) {
+                    console.error("Gagal menghapus data di Firestore:", e);
+                }
+            }
+            return false;
+        };
+
+        initFirebase();
+    </script>
+</body>
+</html>
