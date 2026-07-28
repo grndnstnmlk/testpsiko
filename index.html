@@ -87,6 +87,21 @@
             #modal-evaluation { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
             .no-print { display: none !important; }
         }
+
+        /* Layout khusus Ujian 2: gambar di kiri, panel soal/jawaban di kanan,
+           aktif mulai dari lebar tablet (>=640px) agar tidak tertumpuk vertikal
+           di perangkat tablet Android yang lebar layarnya di bawah breakpoint 'lg'. */
+        @media (min-width: 640px) {
+            #test-layout-container.exam-layout-force-row {
+                flex-direction: row;
+            }
+            #test-layout-container.exam-layout-force-row > .exam-img-panel {
+                width: 65%;
+            }
+            #test-layout-container.exam-layout-force-row > .exam-answer-panel {
+                width: 35%;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -214,9 +229,9 @@
                 </div>
             </div>
 
-            <div class="flex flex-col lg:flex-row gap-6">
+            <div id="test-layout-container" class="flex flex-col lg:flex-row gap-6">
                 <!-- BAGIAN KIRI: GAMBAR SOAL -->
-                <div class="w-full lg:w-[70%] flex flex-col">
+                <div class="exam-img-panel w-full lg:w-[70%] flex flex-col">
                     <div class="flex items-center justify-between bg-slate-100 p-2 rounded-xl mb-3 text-xs overflow-x-auto">
                         <span class="font-bold text-slate-600 px-2 flex items-center gap-1 whitespace-nowrap">
                             <i class="fa-solid fa-scissors text-indigo-600"></i> Fokus Lensa:
@@ -234,7 +249,7 @@
                 </div>
 
                 <!-- BAGIAN KANAN: PANEL JAWABAN & NAVIGASI -->
-                <div class="w-full lg:w-[30%] flex flex-col justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-inner">
+                <div class="exam-answer-panel w-full lg:w-[30%] flex flex-col justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-inner">
                     <div>
                         <div class="mb-6">
                             <p class="text-xs font-extrabold text-slate-500 mb-3 uppercase tracking-wider text-center">Pilih Jawaban Anda:</p>
@@ -976,6 +991,13 @@
             document.getElementById('view-student-intro').classList.add('hidden');
             document.getElementById('view-student-test').classList.remove('hidden');
 
+            // Ujian 2 (Kecermatan Gambar): tampilkan gambar di kiri & panel soal
+            // di kanan mulai dari lebar tablet ke atas, bukan tertumpuk vertikal.
+            const layoutContainer = document.getElementById('test-layout-container');
+            if (layoutContainer) {
+                layoutContainer.classList.toggle('exam-layout-force-row', selectedModule === 'Ujian 2');
+            }
+
             renderQuestion();
             renderNavGrid();
 
@@ -1143,7 +1165,9 @@
             const hint = document.createElement('p');
             hint.className = 'text-[10px] text-slate-400 text-center mb-1.5 w-full font-medium';
             
-            if (activeCropType.startsWith('grid-') || activeCropType.startsWith('tmg-')) {
+            if (selectedModule === 'Ujian 2' && (activeCropType === 'left' || activeCropType === 'right')) {
+                hint.innerHTML = '';
+            } else if (activeCropType.startsWith('grid-') || activeCropType.startsWith('tmg-')) {
                 hint.innerHTML = '<i class="fa-solid fa-up-down-left-right mr-1 text-indigo-500"></i> Anda dapat menggeser (scroll) gambar jika posisinya kurang pas';
             } else {
                 hint.innerHTML = '<i class="fa-solid fa-up-down-left-right mr-1"></i> Anda dapat menggeser (scroll/swipe) gambar jika terpotong';
@@ -1152,7 +1176,8 @@
 
             const wrapper = document.createElement('div');
             wrapper.id = 'crop-viewport-wrapper';
-            wrapper.className = 'scroll-viewport relative w-full rounded-xl overflow-auto border-2 border-slate-200 bg-white shadow-inner transition-all duration-300';
+            const disableManualScroll = (selectedModule === 'Ujian 2' && (activeCropType === 'left' || activeCropType === 'right'));
+            wrapper.className = `scroll-viewport relative w-full rounded-xl ${disableManualScroll ? 'overflow-x-hidden overflow-y-visible' : 'overflow-auto'} border-2 border-slate-200 bg-white shadow-inner transition-all duration-300`;
 
             if (q.driveId) {
                 const img = createRobustImg(q.driveId);
@@ -1172,10 +1197,10 @@
 
                 img.onload = () => {
                     if (activeCropType === 'left') {
-                        wrapper.style.height = '400px';
+                        wrapper.style.height = `${img.clientHeight}px`;
                         wrapper.scrollLeft = 0;
                     } else if (activeCropType === 'right') {
-                        wrapper.style.height = '400px';
+                        wrapper.style.height = `${img.clientHeight}px`;
                         wrapper.scrollLeft = wrapper.scrollWidth / 2;
                     } else if (activeCropType.startsWith('row-')) {
                         const rowNum = parseInt(activeCropType.replace('row-', ''));
