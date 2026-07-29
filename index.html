@@ -836,10 +836,26 @@
             }
         }
 
+        function lockBackButton() {
+            // Tambahkan satu entri riwayat "penjaga" — begitu tombol kembali
+            // ditekan, event popstate akan menembak dan kita dorong lagi
+            // entri yang sama, sehingga halaman tidak benar-benar berpindah
+            // dan ujian tidak terulang dari awal.
+            history.pushState({ examLock: true }, '', location.href);
+        }
+
+        function handlePopState() {
+            if (examInProgress) {
+                history.pushState({ examLock: true }, '', location.href);
+                logViolation('back_button', 'Tombol/gestur kembali diblokir selama ujian berlangsung!');
+            }
+        }
+
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('msfullscreenchange', handleFullscreenChange);
         document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('popstate', handlePopState);
         // ==================== END ANTI-CHEAT ====================
 
         
@@ -1262,6 +1278,7 @@
                 exitExamFullscreen();
             }
             hideMainHeader();
+            lockBackButton();
 
             document.getElementById('test-student-name').innerText = studentData.name;
             document.getElementById('test-student-class').innerText = studentData.class;
