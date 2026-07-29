@@ -7,6 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -697,7 +698,7 @@
             },
             'Ujian 4': { // Tes Matriks Gambar (30 Soal)
                 1: { key: '6', optionsCount: 6, exp: 'Melengkapi variasi tekstur (Arsir Silang/Grid) pada baris 3.' },
-                2: { key: '1', optionsCount: 5, exp: 'Panah menghadap Kanan dengan tekstur arsir bintik.' },
+                2: { key: '1', optionsCount: 6, exp: 'Panah menghadap Kanan dengan tekstur arsir bintik.' },
                 3: { key: '2', optionsCount: 6, exp: 'Kapsul bertekstur bintik halus.' },
                 4: { key: '1', optionsCount: 6, exp: 'Ekspresi wajah senyum dengan mata garis/kedip.' },
                 5: { key: '4', optionsCount: 5, exp: 'Kapsul/Cangkir terbalik bertekstur bintik.' },
@@ -875,33 +876,17 @@
                     let introFile;
                     let questionFiles = [];
 
-                    if (moduleName === 'Ujian 4' || moduleName === 'Ujian 3') {
-                        // Gambar instruksi kini diberi nama file "instruksi" di Drive.
-                        introFile = data.find(f => f.name && f.name.toLowerCase().includes('instruksi')) || data[0];
-                        if (introFile) {
-                            INTRO_IMAGE_DRIVE_ID[moduleName] = introFile.id;
-                            questionFiles = data.filter(f => f.id !== introFile.id);
-                        } else {
-                            questionFiles = [...data];
-                        }
-                    } else if (moduleName === 'Ujian 1') {
-                        // Gambar instruksi kini diberi nama file "instruksi" di Drive.
-                        introFile = data.find(f => f.name && f.name.toLowerCase().includes('instruksi')) || data[0];
-                        if (introFile) {
-                            INTRO_IMAGE_DRIVE_ID[moduleName] = introFile.id;
-                            questionFiles = data.filter(f => f.id !== introFile.id);
-                        } else {
-                            questionFiles = [...data];
-                        }
-                    } else if (moduleName === 'Ujian 2') {
-                        // Gambar instruksi kini diberi nama file "instruksi" di Drive.
-                        introFile = data.find(f => f.name && f.name.toLowerCase().includes('instruksi')) || data[0];
-                        if (introFile) {
-                            INTRO_IMAGE_DRIVE_ID[moduleName] = introFile.id;
-                            questionFiles = data.filter(f => f.id !== introFile.id);
-                        } else {
-                            questionFiles = [...data];
-                        }
+                    // Gambar instruksi harus diberi nama file mengandung kata "instruksi" di Drive.
+                    // PENTING: jangan fallback ke data[0] — jika folder belum punya file
+                    // "instruksi", data[0] bisa jadi file SOAL/JAWABAN (mis. "1-1" di Ujian 4),
+                    // yang akan salah ditampilkan sebagai instruksi sekaligus hilang dari daftar soal.
+                    introFile = data.find(f => f.name && f.name.toLowerCase().includes('instruksi'));
+                    if (introFile) {
+                        INTRO_IMAGE_DRIVE_ID[moduleName] = introFile.id;
+                        questionFiles = data.filter(f => f.id !== introFile.id);
+                    } else {
+                        delete INTRO_IMAGE_DRIVE_ID[moduleName];
+                        questionFiles = [...data];
                     }
 
                     let dynamicQuestions = [];
@@ -1156,6 +1141,9 @@
                         <div class="flex items-center justify-center gap-1.5">
                             <button onclick="openEvaluationFromTeacher('${res.id}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1 px-2.5 rounded-lg border border-indigo-200 transition inline-flex items-center gap-1">
                                 <i class="fa-solid fa-eye"></i> Lihat Detail
+                            </button>
+                            <button onclick="downloadResultPDF('${res.id}')" title="Download PDF hasil ujian" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-1 px-2.5 rounded-lg border border-emerald-200 transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
                             </button>
                             <button onclick="deleteOneResult('${res.fsDocId || res.id}', '${escapeHtml(res.studentName)}')" title="Hapus data ini" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1 px-2.5 rounded-lg border border-red-200 transition inline-flex items-center gap-1">
                                 <i class="fa-solid fa-trash"></i>
@@ -1991,6 +1979,117 @@
             const res = results.find(r => r.id === resultId || r.fsDocId === resultId);
             if (res) openEvaluationModal(res);
             else showAlert("Data hasil ujian tidak ditemukan.", "Error");
+        }
+
+        function downloadResultPDF(resultId) {
+            const results = window.firestoreReady ? window.examResultsData : JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+            const result = results.find(r => r.id === resultId || r.fsDocId === resultId);
+            if (!result) { showAlert("Data hasil ujian tidak ditemukan.", "Error"); return; }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const marginX = 40;
+            let y = 50;
+
+            function ensureSpace(neededHeight) {
+                if (y + neededHeight > pageHeight - 40) {
+                    doc.addPage();
+                    y = 50;
+                }
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text('Hasil Ujian Psikotes', marginX, y);
+            y += 26;
+
+            doc.setDrawColor(200);
+            doc.line(marginX, y, pageWidth - marginX, y);
+            y += 20;
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            const infoRows = [
+                ['Nama', result.studentName || '-'],
+                ['Nomor Daftar', result.studentClass || '-'],
+                ['Modul', result.module || '-'],
+                ['Tanggal', result.dateStr || '-'],
+                ['Nilai Akhir', String(result.score)],
+                ['Jumlah Benar', `${result.correctCount} dari ${result.totalQuestions} soal`],
+                ['Soal Dijawab', `${result.answeredCount} dari ${result.totalQuestions} soal`],
+                ['Pelanggaran Terdeteksi', result.violationCount ? `${result.violationCount} kali` : 'Tidak ada']
+            ];
+            infoRows.forEach(([label, value]) => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${label}`, marginX, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`: ${value}`, marginX + 130, y);
+                y += 16;
+            });
+            y += 10;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.text('Rincian Jawaban per Soal', marginX, y);
+            y += 20;
+            doc.setDrawColor(200);
+            doc.line(marginX, y, pageWidth - marginX, y);
+            y += 18;
+
+            const questions = result.questionsSnapshot || [];
+            const contentWidth = pageWidth - marginX * 2;
+
+            questions.forEach((q, idx) => {
+                const userChoice = result.userAnswers ? result.userAnswers[idx] : null;
+                const isAnswered = !!userChoice;
+                const isCorrect = (userChoice === q.key);
+                const statusLabel = !isAnswered ? 'Tidak Dijawab' : (isCorrect ? 'Benar' : 'Salah');
+
+                const userAnswerText = userChoice ? (result.module === 'Ujian 2' ? userChoice : `Pilihan ${userChoice}`) : 'Tidak Menjawab';
+                const keyText = result.module === 'Ujian 2' ? (q.key || '-') : `Pilihan ${q.key || '-'}`;
+
+                const explanationLines = doc.splitTextToSize(q.explanation || 'Belum ada penjelasan.', contentWidth - 10);
+                const blockHeight = 18 + 16 + 16 + (explanationLines.length * 13) + 14;
+
+                ensureSpace(blockHeight);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(`Soal Nomor ${q.id}`, marginX, y);
+
+                doc.setFont('helvetica', 'bold');
+                if (statusLabel === 'Benar') doc.setTextColor(5, 150, 105);
+                else if (statusLabel === 'Salah') doc.setTextColor(220, 38, 38);
+                else doc.setTextColor(100, 100, 100);
+                doc.text(statusLabel, pageWidth - marginX - doc.getTextWidth(statusLabel), y);
+                doc.setTextColor(0, 0, 0);
+                y += 16;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(`Jawaban Peserta: ${userAnswerText}`, marginX, y);
+                doc.text(`Kunci Jawaban: ${keyText}`, marginX + contentWidth / 2, y);
+                y += 16;
+
+                doc.setFont('helvetica', 'bold');
+                doc.text('Pembahasan:', marginX, y);
+                y += 13;
+                doc.setFont('helvetica', 'normal');
+                explanationLines.forEach(line => {
+                    ensureSpace(13);
+                    doc.text(line, marginX, y);
+                    y += 13;
+                });
+
+                y += 10;
+                doc.setDrawColor(230);
+                doc.line(marginX, y - 6, pageWidth - marginX, y - 6);
+            });
+
+            const safeName = (result.studentName || 'siswa').replace(/[^a-z0-9]+/gi, '_');
+            doc.save(`Hasil_Ujian_${safeName}_${result.module.replace(/\s+/g, '')}.pdf`);
         }
 
         function clearAllData() {
