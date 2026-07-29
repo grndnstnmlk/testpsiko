@@ -742,6 +742,7 @@
         let examInProgress = false;
         let examViolations = [];
         let cheatToastTimeout = null;
+        let fullscreenRequiredThisExam = false;
 
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxy9geo8yILE2NuvWZlPde-EONikVGHhpFGYr6P45Xnnptt4llhn-aztAfHUCVyfAWh5w/exec";
@@ -824,7 +825,7 @@
 
         function handleFullscreenChange() {
             const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
-            if (examInProgress && !isFs) {
+            if (examInProgress && fullscreenRequiredThisExam && !isFs) {
                 logViolation('fullscreen_exit', 'Terdeteksi keluar dari mode layar penuh!');
             }
         }
@@ -1248,10 +1249,18 @@
 
             // Aktifkan mode anti-cheat: reset pelanggaran, kunci fullscreen,
             // dan mulai pantau perpindahan tab/jendela.
+            // Ujian 2 dikecualikan dari fullscreen paksa karena di banyak
+            // browser HP/tablet, papan ketik virtual tidak bisa muncul saat
+            // mode layar penuh aktif — padahal Ujian 2 dijawab dengan mengetik.
             examViolations = [];
             updateViolationBadge();
             examInProgress = true;
-            requestExamFullscreen();
+            fullscreenRequiredThisExam = (selectedModule !== 'Ujian 2');
+            if (fullscreenRequiredThisExam) {
+                requestExamFullscreen();
+            } else {
+                exitExamFullscreen();
+            }
             hideMainHeader();
 
             document.getElementById('test-student-name').innerText = studentData.name;
