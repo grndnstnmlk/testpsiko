@@ -723,9 +723,87 @@
             }
         };
 
-        const FALLBACK_DATABASE = { 'Ujian 1': [], 'Ujian 2': [], 'Ujian 3': [], 'Ujian 4': [] };
+        const INTRO_IMAGE_DRIVE_ID = {
+            'Ujian 1': '1GK2-5670uSfiuYiNq8UJMz-Wm7Y1CEfE'
+        };
+
+        // Database ID Gambar Google Drive Asli (Fallback fail-safe jika Google Apps Script 404 / down)
+        const FALLBACK_DRIVE_IDS = {
+            'Ujian 1': [
+                "1WJGTKed2hL0NoAKAUxWQspf2xGIf_6VI","1I7ylV8temLMv1nE9x_HxvgJ0d7uX83gx","18IOy2cfTKSzpDvnVG4eV6d6UsFcIif3-",
+                "1nJwSxLMwCDMtjIGnT47OPhqvYdNAKt2s","1HLvft3YwJVpTPSigQ28XM5g4WDFLVLn2","1ONqsHEY8ZZWc_0ag01Kmoss4D2qf2JEF",
+                "1DkEKbF7BX3o0b7i7SPJ9Mkg4wlYn6P8J","1syA7TlK4G3GMCzUn6MkO5h0193l2sL8o","1ph0oIHzFvp4XC6i5vGkx6oPNIdYFj5qD",
+                "1IzcZEwll_jiarbzBZvyYlJSWDc6xnCZ5","1bfSrZuuWC-8Rj91oHv42tx4mAA_cVPaj","1MnmctjppUOR1O9dDOjQIOGVWfp_p7EG6",
+                "1RCcYTByw_J4G7zyA8HUJp7GIg4V0a5yg","1fhdF9Lro43Kdv9r_wllgm48VtU5rTn9x","1cTyDcJJaLiiTxr1gJrblyEeAF28d93Ig",
+                "1Y2DaI6PvE0lGfeY9zHUiFMRTKKqajtij","1gQpdUk0ZnpG_zpb7DS7riW-I3gF9bhfr","1JwnD5zKqdzGCrV3pE0OiU3_Qc-NUBgs0",
+                "1UholeBJMY9893NbIteuy-wpaIQ1Rz9bd","1A2IvT4wx69TaYzDyRgRT32nWI5maQou9","1ZF-6Cq-9SGZ6Q-bEXJkn4qPezM9D39hP",
+                "1dbT6nZjYJtghj_ycY3k6OZj9RfhbRQz_","1jTpcDundH07fDSqZZYLCqNsdrsOp9ukK","1s5uGjzj6UC9fGFp43RmUM4miYnlQQqsb",
+                "1sLAIPsSHjziRxJU0KpKyyHln91oLPDRR","1CG5tcMQxQ4bwWcjGYjx6qFoldhUM-MIA","1o4CQfprqYFu2SzFXkfDLwMWc95rbQMf2",
+                "1CK56EjZ2gaU3lyrbPoX_INxiu5l-_STx","1HrzeqeZ2bAcWAXYHS3gVyQfa9XUuALjI","1IC6rmwd7LGJDVovKJSFXrTvyfKxCvo0v"
+            ],
+            'Ujian 2': [
+                "16kRyjEkqgX-_7QTi8-jtsMDCvlB-pVUY","1wiwE_ljyt59ggg_qfWueZWNGf9IZ59wC","1VZ4Oc5jjIDmk8_gqpfyk7dvznu4fMPWX",
+                "17CADcYCDYGIG_uDQOE138eF6XPlAI19b","1PtSvMAYwk3DAdFoMgxhm9JLZ4rtSRf_d","1hLMTz-ykSPUQ4WxcbFNNg4l34MnNa3aG",
+                "1EHJ2cYILwCvx-ELLG1B4ji9TyL_H3ZbU","1JgTmt3gTihbq_EeztP1w4_mpVtMdq4zj","1lvXZw56cfsRK3WMWDXyJcDYCw7Us8TBF",
+                "11tSaSRipfGfLvdsQb6bj8c_19J9gRDPK","1bnxA1CZWbCKaW4zIEv5IzUuKeXYQpwuo","1SYudeeWQPz0xk9qj0i-2b1MS1Qa4ea3x",
+                "1sW5SvppUdTS4rlYhNMKqTcYJGraju0Hp","1BqpqrPEN0q478Wm6Dh8N_WziWGOSOc-m","1CU6vFvRNXKhg0YCZ_j13mpYrI4efaCud",
+                "1Vy9Nw0nO7jb0d9gBy_24gUabw4PIyY0H","1R8XQZfzbkj_OBVSfwJjA1944P1cm2qpF","1IkJ4LExrkftrviDgjSGK8dj_fYEcd5_p",
+                "1jHE1fkgXHwZZZLwwhbsZcFVbpGKP4SvR","1eN1HfFXOaI7Ffgj8u4C-Dk4-tnujPmxU","1ab14zAInkTUXkF_LbGQfOIwg4PP29JkQ",
+                "1v4lkxGIKU1X0cp5Wv4vsA7GLASRWv_ph","1bL2GAc9k_-o9E7Xv2D9mO6DdhPfpe3RV","1v-S_AZp0uZzEQdO83MyDvpwp71iWKthZ",
+                "1oi5i6tpr1gK5LOUc5r6QUlosi8AluNap","1fQRsKEDDb5JZkphHfeqODb8vbQY_oX33","1Ur2uso0btY7Nm5FsEnNyZK9fDeDHVPmb",
+                "11Uo14x8lbNN1GhR5LYlKDNAusBHdx7JI","1Tks3eLAud46nI-tRYDN3IHcAaHNykJAa","10zcDTL32DmvgEyVCHx4tT3w2UMExHFLu",
+                "1LKjMfeGs4kXq_iJPW7Rolxsh-5q_SwGd","1tTOAMrWgJRU9VgcJw6NDzHFcoH0iSfxU","1dHlXdwl4q9A2U16QzvmJtNhXKkEqPxgq",
+                "1Guy_iV7LdbBSLSQY2ty1zgI7H3rOChAg","12sV_W3nowGc30WjxyBpwnN0ftVrzzAJo","1GSDjmXAraE__Ocq5vD2pQBdzYK68lHZ4",
+                "1OCpZ87hpezO4qbkTgylPZregtJpLD4DS","1Sert89uA0mrzEbYzggTSwZBr8abRaNt3","1bbKHqloQxTQNV5RJaIbbbXMMB915aNip",
+                "1Y4Jc-5Dh0WwPyC-xg1yUG1_RCNtuQ5Ta","1y7yJTkk6PRQur_pvs7QD4bcsE2YPY4aR","13UAHMAQGn6CeGRBI8jqKLqklTPReqluJ",
+                "1XV9-XFBrfy-TTT4A9yeUNi1T0Solc18c","1SjCVe4Gq_3HZnCQL00mbQ811pdhZ4pch","1ssHZrV7u3hwVokQ0NgKwRZmB6cN48ofe",
+                "1d7OHN-hHyAQK8k4ugJZi212GJ6UNLt_g","1BCDEQMhcSERyLxQmcBJwHSfRAgr_7b5E","1dzQ_IJOV6JO0-cNFpDkCZ_RC5PRarfT8",
+                "1K1GV5yfy6CVX7uChOB13BcVYTsA2S7ap","11RQflJqR-uUpqV2o2v-I0jjgmVKPOq8t"
+            ],
+            'Ujian 3': [
+                "1-FEoiFGuC-t5aD1bhtaRN2msKW-n6n9z","1B5YEy8grvS_EauoEOdoxzYEQLE0QWtV5","1oWFN4VIhgwdja4rxipO42JasmlIP62cQ",
+                "19QI3gLj312e1ms5CJ7ETaE0C1GEeI5p7","1fFeB7EYtKdpTm7YyjSknNchc0IPmGCpk","1k7hNZW8LMUbQUIbfyS5Y46aTrxrkPd5h",
+                "1PanoDsJ0lvuTTdyCDNIH6CnMRYINNM8X","1qosoaatpZw1hP--1igkTRvZSCNXJYsN4","1IDuRB7tT2DMCPHs8so2PZsxyJHhYaIls",
+                "1fRy01CqDAUvA8fzIBfI3_258DNBN69Te","1XXza8YnFltQ7Qt0s2G-gsWFHdAuMybGA","1q0oKVwB2k_EVLBdShDh-W33PdgT5MYEs",
+                "1QZCkBZQO2RftlWNUehLywqQT2F48BMfK","11JE97yUPtDw0ilvScPrfs7X439b7qRRQ","12K5mhbSR1XNkc2efvneXLTNGD90ouOBg",
+                "1gyvklwLoDzClIb1xIaOWau00l0FAogBd","19VfyiOq72Y0zbMBdoS0c4tAlPZbJmW8i","1h4O_ACNiXTBHsFhxl7MQIe3zxkKAWsk0",
+                "1pgLCbdbA4mWMCESyRTH7vEHQySXSwic0","1l0Z0c1H5cNK5geKo2uXZurtsT4jn5BeT","1Q985sOW2lUZa4Q7-1OFCafCUImVMY8Hn",
+                "144ZKg8s1tE5tzFhAYFUYVE7LuitjZhEg","1tFTYbM3YMi1q9xDJzAqiDlXgiXArXsqu","1ziZ0Id0ss2AQXx1HCfPza4_ItPVurFZD",
+                "1lrqXdCRbXjqWx10S9wuzR0FPK-PPVPRx","1UxisXRvl4wfEIjGF5aVcuhiAz6R0Ln4Y","1kVVL3-ogH2YFIw8D-0_qFxNS7GwUfXNP",
+                "1C5tQr2MzkWLI-lOM0W35Mmb0ZQrQArE1","1ADwM3YTcDTEpi-ZPHaEt3lquEWKA3hFI","1F8KOmyxTO1-BhF0zKt8JjH-ZMmk8EfEa",
+                "10Dq4vJOfCKbMDfDxzv1qBEF11vIjFP8F","1cXprhk7A30CWVF78mrEHJnGtWyK-iaJY","1k3Hvr8JOvlFVdyEMxcOVOPBe8bFZ0mR0",
+                "1sOw9DqhP84pnwGVjA3snHZcjFDMqhHHM","1JP4-jMbq4Vm9iZw15oJekM-CSEwzHQZj","15qUCEIPFNmOY5_JyStU-HV_Uh5DmqQLF",
+                "1FsbJPx55EHjzDmdri0NPeZiHFuWrgYZk","1tK2I-eJMQca_AJEBZMBHdYxDFbstjvHP","145Ceq9Omvu40AFuLVB0PPBJHDnIbxppY",
+                "1BmKD5cEBIvbZI8altWBfJc2EDUCSrrfT","1M_KnYHEbvqULseJushrnEcmqmyr56DlR","1OZKlf6rB7kuOAP9kj7qhfe9Kik_eZPc8",
+                "1uDuATuujmSHW5iDhp3lsa59iuXcCgrDi","11CMx89yYfhM_quTI2-QKvG43Yid4tePh","1wnnSXqfUPPlvFcSU1DTaBuZznE2K-IEU",
+                "1XXN9YJbC3gm8wCHaXCeCJaeuIi_dyoJx","1sypheSGXWWsx8LLdPd5csTJt3-dKkq3G","1z5CXUvR3mnvUPs-tQcytMP4FAlK3Wmqn",
+                "15ajGvynJebe6eJsjT9125dbTxzpKjLve","1Hzz3JrNRwUwW2ouX2cffoF5MM-YrHGne"
+            ]
+        };
+
+        const FALLBACK_DATABASE = (function() {
+            const db = { 'Ujian 1': [], 'Ujian 2': [], 'Ujian 3': [], 'Ujian 4': [] };
+            for (const [mod, ids] of Object.entries(FALLBACK_DRIVE_IDS)) {
+                ids.forEach((driveId, idx) => {
+                    const qId = idx + 1;
+                    const cfg = (EXAM_CONFIG[mod] && EXAM_CONFIG[mod][qId]) || {};
+                    let defaultKey = 'A';
+                    if (mod === 'Ujian 2') defaultKey = ['a', 'b', 'c'][(qId - 1) % 3];
+                    if (mod === 'Ujian 3') defaultKey = (qId % 2 === 0) ? 'X' : 'O';
+                    db[mod].push({
+                        id: qId,
+                        driveId,
+                        cropType: 'full',
+                        optionsCount: cfg.optionsCount || (mod === 'Ujian 3' ? 2 : (mod === 'Ujian 2' ? 3 : 4)),
+                        key: (cfg.key || defaultKey).toLowerCase ? (cfg.key || defaultKey).toLowerCase() : (cfg.key || defaultKey),
+                        explanation: cfg.exp || `Soal ${qId}: Berdasarkan analisis logika.`
+                    });
+                });
+            }
+            return db;
+        })();
+
         let ACTIVE_DATABASE = JSON.parse(JSON.stringify(FALLBACK_DATABASE));
-        const INTRO_IMAGE_DRIVE_ID = {};
 
         window.currentPortal = 'student';
         let selectedModule = 'Ujian 1';
@@ -874,6 +952,9 @@
 
             try {
                 const response = await fetch(`${GAS_URL}?folderId=${folderId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const data = await response.json();
 
                 if (data && Array.isArray(data) && data.length > 0) {
@@ -1021,7 +1102,7 @@
                     return dynamicQuestions;
                 }
             } catch (err) {
-                console.warn('Gagal mengambil folder dari Drive API.', err);
+                console.warn(`[Drive Cloud] Apps Script belum terhubung (${err.message}). Menggunakan database gambar cadangan.`);
             }
             return ACTIVE_DATABASE[moduleName] || [];
         }
@@ -1247,7 +1328,7 @@
                 const img = createRobustImg(introId, 'w-full h-auto object-contain rounded-lg shadow-sm border border-slate-200');
                 introContainer.appendChild(img);
             } else {
-                introContainer.innerHTML = `<div class="text-center p-6 bg-slate-50 rounded-xl"><i class="fa-solid fa-folder-open text-slate-400 text-3xl mb-2"></i><p class="text-xs text-slate-500 font-semibold">Gambar Petunjuk Kosong</p></div>`;
+                introContainer.innerHTML = `<div class="text-center p-6 bg-slate-50 rounded-xl"><i class="fa-solid fa-file-lines text-indigo-400 text-3xl mb-2"></i><p class="text-xs text-slate-700 font-bold">Panduan Pengerjaan ${moduleName}</p><p class="text-[11px] text-slate-500 mt-1">Harap baca instruksi dengan cermat sebelum memulai ujian.</p></div>`;
             }
         }
 
