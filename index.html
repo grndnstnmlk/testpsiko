@@ -580,7 +580,7 @@
                 34: { key: 'a', exp: 'Tata Ruang Kosong (Negative Space): Bentuk area kosong (putih) di sekitar objek utama A sangat pas.' },
                 35: { key: 'b', exp: 'Kesinambungan Kurva: Kurva melengkung pada opsi B tidak mengalami patahan visual.' },
                 36: { key: 'a', exp: 'Proporsi Hitam-Putih: Gambar A mempertahankan perbandingan warna pekat dan ruang transparan yang seimbang.' },
-                37: { key: 'a', exp: 'Presisi Titik Temu (Vertex): Semua sudut pertemuan garis pada gambar A terkunci dengan rapi tanpa celah.' },
+                37: { key: 'sama', exp: 'Identik 100%: Gambar acuan dan gambar pada opsi ini sama persis secara ukuran, orientasi, dan detail.' },
                 38: { key: 'b', exp: 'Dimensi PxL: Rasio panjang berbanding lebar pada gambar B tidak mengalami efek melebar (stretch) atau menyempit.' },
                 39: { key: 'a', exp: 'Derajat Elips: Kelonjongan lingkaran (elips) pada opsi A mengikuti lengkung radial yang identik.' },
                 40: { key: 'a', exp: 'Elemen Periferal: Detail-detail kecil di bagian pinggir gambar A tersusun tanpa ada kelalaian cetak.' },
@@ -742,7 +742,6 @@
         let examInProgress = false;
         let examViolations = [];
         let cheatToastTimeout = null;
-        let fullscreenRequiredThisExam = false;
 
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxy9geo8yILE2NuvWZlPde-EONikVGHhpFGYr6P45Xnnptt4llhn-aztAfHUCVyfAWh5w/exec";
@@ -753,20 +752,27 @@
         // pengguna yang benar-benar niat curang (mis. pakai HP kedua) tetap
         // tidak bisa dicegah dari sisi browser manapun.
 
+        let hasEnteredFullscreen = false;
+
         function requestExamFullscreen() {
             const el = document.documentElement;
             const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
             if (req) {
-                req.call(el).catch(() => {
-                    // Beberapa browser/perangkat menolak permintaan fullscreen
-                    // (mis. dibatasi kebijakan situs). Ujian tetap bisa dikerjakan,
-                    // hanya tanpa mode layar penuh.
-                    console.warn('Fullscreen tidak dapat diaktifkan di perangkat ini.');
-                });
+                const p = req.call(el);
+                if (p && typeof p.then === 'function') {
+                    p.then(() => {
+                        hasEnteredFullscreen = true;
+                    }).catch(() => {
+                        console.warn('Fullscreen tidak dapat diaktifkan di perangkat ini.');
+                    });
+                } else {
+                    hasEnteredFullscreen = true;
+                }
             }
         }
 
         function exitExamFullscreen() {
+            hasEnteredFullscreen = false;
             const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
             const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
             if (isFs && exit) {
@@ -825,14 +831,10 @@
 
         function handleFullscreenChange() {
             const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
-            if (examInProgress && fullscreenRequiredThisExam && !isFs) {
-                logViolation('fullscreen_exit', 'Terdeteksi keluar dari mode layar penuh! Mencoba mengunci ulang...');
-                // Coba paksa masuk lagi ke fullscreen. Catatan: sebagian browser
-                // menolak permintaan fullscreen yang tidak langsung dipicu oleh
-                // sentuhan/klik pengguna, jadi ini tidak 100% berhasil di semua
-                // perangkat — tapi di sebagian besar kasus (mis. menutup panel
-                // notifikasi) ini akan langsung mengembalikan ke fullscreen.
-                requestExamFullscreen();
+            if (isFs) {
+                hasEnteredFullscreen = true;
+            } else if (examInProgress && hasEnteredFullscreen) {
+                logViolation('fullscreen_exit', 'Terdeteksi keluar dari mode layar penuh!');
             }
         }
 
@@ -842,27 +844,17 @@
             }
         }
 
-        function lockBackButton() {
-            // Tambahkan satu entri riwayat "penjaga" — begitu tombol kembali
-            // ditekan, event popstate akan menembak dan kita dorong lagi
-            // entri yang sama, sehingga halaman tidak benar-benar berpindah
-            // dan ujian tidak terulang dari awal.
-            history.pushState({ examLock: true }, '', location.href);
-        }
-
-        function handlePopState() {
-            if (examInProgress) {
-                history.pushState({ examLock: true }, '', location.href);
-                logViolation('back_button', 'Tombol/gestur kembali diblokir selama ujian berlangsung!');
-            }
-        }
-
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('msfullscreenchange', handleFullscreenChange);
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('popstate', handlePopState);
         // ==================== END ANTI-CHEAT ====================
+
+        // Standarisasi perbandingan jawaban (kebal case-sensitivity & spasi)
+        function isAnswerCorrect(userAns, correctKey) {
+            if (userAns === undefined || userAns === null || correctKey === undefined || correctKey === null) return false;
+            return String(userAns).trim().toLowerCase() === String(correctKey).trim().toLowerCase();
+        }
 
         
         function getFolderIdForModule(moduleName) {
@@ -930,11 +922,11 @@
 
                             let qId = qNum++;
                             generatedCount++;
-                            let defaultKey = ['A', 'B', 'C'][(qId - 1) % 3];
+                            let defaultKey = ['a', 'b', 'c'][(qId - 1) % 3];
                             let config = (EXAM_CONFIG[moduleName] && EXAM_CONFIG[moduleName][qId])
                                 ? EXAM_CONFIG[moduleName][qId]
                                 : { key: defaultKey, optionsCount: 3, exp: `Soal ${qId}: Berdasarkan analisis logika.` };
-                            dynamicQuestions.push({ id: qId, driveId: fileObj.id, cropType: 'full', optionsCount: config.optionsCount || 3, key: config.key || defaultKey, explanation: config.exp });
+                            dynamicQuestions.push({ id: qId, driveId: fileObj.id, cropType: 'full', optionsCount: config.optionsCount || 3, key: (config.key || defaultKey).toLowerCase(), explanation: config.exp });
                         });
                     } else if (moduleName === 'Ujian 3') {
                         // Sejak Drive Ujian 3 disusun 1 gambar per soal, tidak perlu lagi
@@ -1035,6 +1027,12 @@
         }
 
         function createRobustImg(driveId, extraClass = '') {
+            if (!driveId) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'text-center p-6 bg-slate-50 border border-slate-200 rounded-xl w-full flex flex-col items-center justify-center min-h-[200px]';
+                emptyDiv.innerHTML = `<i class="fa-solid fa-image text-slate-300 text-3xl mb-2"></i><p class="text-xs text-slate-400 font-semibold">Gambar belum tersedia</p>`;
+                return emptyDiv;
+            }
             const img = document.createElement('img');
             img.referrerPolicy = 'no-referrer';
             // Lazy load + async decode: penting untuk halaman evaluasi Ujian 3/4
@@ -1179,16 +1177,16 @@
                 `Apakah Anda yakin ingin menghapus data hasil ujian milik "${studentName}" secara permanen?`,
                 "Hapus Data Ini",
                 async function() {
+                    let existing = JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
+                    existing = existing.filter(r => r.id !== resultId && r.fsDocId !== resultId);
+                    safeStorage.setItem('psikotes_results', JSON.stringify(existing));
+
                     if (window.firestoreReady) {
                         const ok = await window.deleteResultFromFirestore(resultId);
                         if (!ok) {
                             showAlert("Gagal menghapus data di Cloud. Silakan coba lagi.", "Error");
                         }
-                        // onSnapshot listener akan otomatis merender ulang tabel setelah data terhapus
                     } else {
-                        let existing = JSON.parse(safeStorage.getItem('psikotes_results') || '[]');
-                        existing = existing.filter(r => r.id !== resultId);
-                        safeStorage.setItem('psikotes_results', JSON.stringify(existing));
                         window.renderTeacherResults();
                     }
                 }
@@ -1274,10 +1272,8 @@
             examViolations = [];
             updateViolationBadge();
             examInProgress = true;
-            fullscreenRequiredThisExam = true;
             requestExamFullscreen();
             hideMainHeader();
-            lockBackButton();
 
             document.getElementById('test-student-name').innerText = studentData.name;
             document.getElementById('test-student-class').innerText = studentData.class;
@@ -1405,6 +1401,7 @@
 
         function renderCropToolbar() {
             const container = document.getElementById('crop-toolbar-container');
+            if (!container) return;
             container.innerHTML = '';
 
             let modes = [];
@@ -1435,6 +1432,7 @@
 
         function updateCropToolbarButtons() {
             const container = document.getElementById('crop-toolbar-container');
+            if (!container) return;
             const btns = container.querySelectorAll('button');
             btns.forEach(btn => {
                 const modeId = btn.id.replace('btn-crop-', '');
@@ -1489,7 +1487,7 @@
                     img.className = 'max-w-full w-auto h-auto max-h-[65vh] object-contain mx-auto block relative';
                 }
 
-                img.onload = () => {
+                const applyCrop = () => {
                     if (activeCropType === 'left') {
                         wrapper.style.height = `${img.clientHeight}px`;
                         wrapper.scrollLeft = 0;
@@ -1538,6 +1536,14 @@
                         wrapper.style.height = 'auto';
                     }
                 };
+
+                if (img.tagName === 'IMG') {
+                    if (img.complete && img.naturalWidth !== 0) {
+                        applyCrop();
+                    } else {
+                        img.addEventListener('load', applyCrop, { once: true });
+                    }
+                }
 
                 wrapper.appendChild(img);
             }
@@ -1665,11 +1671,14 @@
         function renderNavGrid() {
             const questions = ACTIVE_DATABASE[selectedModule] || [];
             const container = document.getElementById('nav-grid');
+            if (!container) return;
             container.innerHTML = '';
 
             questions.forEach((q, idx) => {
                 const btn = document.createElement('button');
-                btn.className = `num-nav-btn w-8 h-8 rounded-lg border border-slate-200 text-xs font-semibold flex items-center justify-center ${userAnswers[idx] ? 'answered' : ''}`;
+                const isActive = (idx === currentQuestionIndex);
+                const isAnswered = !!userAnswers[idx];
+                btn.className = `num-nav-btn w-8 h-8 rounded-lg border border-slate-200 text-xs font-semibold flex items-center justify-center ${isActive ? 'active' : ''} ${isAnswered ? 'answered' : ''}`;
                 btn.innerText = q.id;
                 btn.onclick = () => {
                     cancelPendingAutoAdvance();
@@ -1746,6 +1755,7 @@
         }
 
         function confirmFinishExam() {
+            cancelPendingAutoAdvance();
             showConfirm(
                 "Apakah Anda yakin ingin menyelesaikan dan mengumpulkan jawaban ujian ini? Data akan terkirim secara otomatis ke sistem.",
                 "Kumpulkan Ujian",
@@ -1754,6 +1764,7 @@
         }
 
         async function finishExam() {
+            cancelPendingAutoAdvance();
             if (examTimer) clearInterval(examTimer);
 
             // Matikan pemantauan anti-cheat & lepas mode fullscreen.
@@ -1765,7 +1776,7 @@
             let correctCount = 0;
 
             questions.forEach((q, idx) => {
-                if (userAnswers[idx] === q.key) correctCount++;
+                if (isAnswerCorrect(userAnswers[idx], q.key)) correctCount++;
             });
 
             const score = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
@@ -1780,7 +1791,8 @@
                 driveId: q.driveId || '',
                 cropType: q.cropType || 'full',
                 key: q.key || 'A',
-                explanation: q.explanation || 'Belum ada penjelasan.'
+                explanation: q.explanation || 'Belum ada penjelasan.',
+                optionImages: Array.isArray(q.optionImages) ? q.optionImages : []
             }));
 
             const examResult = {
@@ -1864,8 +1876,8 @@
             
             questions.forEach((q, idx) => {
                 const userChoice = result.userAnswers ? result.userAnswers[idx] : null;
-                const isCorrect = (userChoice === q.key);
-                const isAnswered = !!userChoice;
+                const isAnswered = (userChoice !== undefined && userChoice !== null && String(userChoice).trim() !== '');
+                const isCorrect = isAnswered && isAnswerCorrect(userChoice, q.key);
 
                 let statusBadge = '';
                 let borderStyle = '';
@@ -1903,7 +1915,7 @@
                         img.className = 'max-w-full w-auto h-auto max-h-[65vh] object-contain mx-auto block relative';
                     }
                     
-                    img.onload = () => {
+                    const applyEvalCrop = () => {
                         if (q.cropType === 'left') {
                             imgWrap.style.height = '250px';
                             imgWrap.scrollLeft = 0;
@@ -1951,6 +1963,14 @@
                             imgWrap.style.height = 'auto';
                         }
                     };
+
+                    if (img.tagName === 'IMG') {
+                        if (img.complete && img.naturalWidth !== 0) {
+                            applyEvalCrop();
+                        } else {
+                            img.addEventListener('load', applyEvalCrop, { once: true });
+                        }
+                    }
                     imgWrap.appendChild(img);
                 }
 
@@ -1961,6 +1981,9 @@
                     </div>
 
                     <div id="eval-img-container-${idx}" class="flex justify-center my-2 relative w-full">
+                    </div>
+
+                    <div id="eval-options-container-${idx}" class="hidden my-2">
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2 border-t border-slate-100">
@@ -1987,6 +2010,50 @@
 
                 const targetContainer = document.getElementById(`eval-img-container-${idx}`);
                 if (targetContainer) targetContainer.appendChild(imgWrap);
+
+                if (Array.isArray(q.optionImages) && q.optionImages.length > 0) {
+                    const optWrap = document.getElementById(`eval-options-container-${idx}`);
+                    if (optWrap) {
+                        optWrap.classList.remove('hidden');
+                        const optGrid = document.createElement('div');
+                        optGrid.className = 'grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2 border-t border-slate-100';
+                        q.optionImages.forEach((optDriveId, optIdx) => {
+                            const optNumber = String(optIdx + 1);
+                            const isUserPick = isAnswerCorrect(userChoice, optNumber);
+                            const isCorrectPick = isAnswerCorrect(q.key, optNumber);
+
+                            const optCard = document.createElement('div');
+                            let borderClass = 'border-slate-200 bg-slate-50';
+                            let badgeHtml = '';
+                            if (isCorrectPick) {
+                                borderClass = 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-400';
+                                badgeHtml = '<span class="absolute top-1 right-1 bg-emerald-600 text-white text-[9px] font-bold px-1 rounded shadow"><i class="fa-solid fa-check"></i> Kunci</span>';
+                            } else if (isUserPick) {
+                                borderClass = 'border-red-500 bg-red-50 ring-2 ring-red-400';
+                                badgeHtml = '<span class="absolute top-1 right-1 bg-red-600 text-white text-[9px] font-bold px-1 rounded shadow"><i class="fa-solid fa-xmark"></i> Peserta</span>';
+                            }
+
+                            optCard.className = `relative p-1 rounded-xl border-2 ${borderClass} flex flex-col items-center justify-between min-h-[85px]`;
+                            optCard.innerHTML = `
+                                <div class="w-full flex items-center justify-between mb-1">
+                                    <span class="bg-slate-800 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">${optNumber}</span>
+                                    ${badgeHtml}
+                                </div>
+                            `;
+                            if (optDriveId) {
+                                const thumb = createRobustImg(optDriveId, 'w-full h-14 object-contain rounded mt-1');
+                                optCard.appendChild(thumb);
+                            } else {
+                                const noImg = document.createElement('div');
+                                noImg.className = 'text-[9px] text-slate-400 text-center my-auto';
+                                noImg.innerText = 'No img';
+                                optCard.appendChild(noImg);
+                            }
+                            optGrid.appendChild(optCard);
+                        });
+                        optWrap.appendChild(optGrid);
+                    }
+                }
             });
         }
 
@@ -2063,11 +2130,11 @@
 
             questions.forEach((q, idx) => {
                 const userChoice = result.userAnswers ? result.userAnswers[idx] : null;
-                const isAnswered = !!userChoice;
-                const isCorrect = (userChoice === q.key);
+                const isAnswered = (userChoice !== undefined && userChoice !== null && String(userChoice).trim() !== '');
+                const isCorrect = isAnswered && isAnswerCorrect(userChoice, q.key);
                 const statusLabel = !isAnswered ? 'Tidak Dijawab' : (isCorrect ? 'Benar' : 'Salah');
 
-                const userAnswerText = userChoice ? (result.module === 'Ujian 2' ? userChoice : `Pilihan ${userChoice}`) : 'Tidak Menjawab';
+                const userAnswerText = isAnswered ? (result.module === 'Ujian 2' ? userChoice : `Pilihan ${userChoice}`) : 'Tidak Menjawab';
                 const keyText = result.module === 'Ujian 2' ? (q.key || '-') : `Pilihan ${q.key || '-'}`;
 
                 const explanationLines = doc.splitTextToSize(q.explanation || 'Belum ada penjelasan.', contentWidth - 10);
@@ -2117,11 +2184,11 @@
                 "Apakah Anda yakin ingin menghapus SEMUA data hasil ujian secara permanen?",
                 "Hapus Semua Data",
                 async function() {
+                    safeStorage.removeItem('psikotes_results');
                     if (window.firestoreReady) {
                         document.getElementById('teacher-results-body').innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Menghapus data di Cloud...</td></tr>`;
                         await window.clearFirestoreData();
                     } else {
-                        safeStorage.removeItem('psikotes_results');
                         window.renderTeacherResults();
                     }
                 }
@@ -2135,17 +2202,19 @@
                 return;
             }
 
-            let csv = "Nama,Nomor Daftar,Modul,Tanggal,Dijawab,Benar,Nilai\n";
+            const clean = (txt) => `"${String(txt ?? '').replace(/"/g, '""')}"`;
+            let csv = "\uFEFFNama,Nomor Daftar,Modul,Tanggal,Dijawab,Benar,Nilai,Pelanggaran\n";
             results.forEach(r => {
-                csv += `"${r.studentName}","${r.studentClass}","${r.module}","${r.dateStr}",${r.answeredCount}/${r.totalQuestions},${r.correctCount},${r.score}\n`;
+                csv += `${clean(r.studentName)},${clean(r.studentClass)},${clean(r.module)},${clean(r.dateStr)},${clean((r.answeredCount || 0) + '/' + (r.totalQuestions || 0))},${r.correctCount || 0},${r.score || 0},${r.violationCount || 0}\n`;
             });
 
-            const blob = new Blob([csv], { type: 'text/csv' });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `hasil_ujian_psikotes_${Date.now()}.csv`;
             a.click();
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
         }
 
         function escapeHtml(text) {
